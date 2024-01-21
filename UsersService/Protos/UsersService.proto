@@ -1,0 +1,73 @@
+syntax = "proto3";
+option csharp_namespace = "UsersService.Protos";
+
+
+service UsersService {
+	rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+	rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+	rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+	rpc GetUser(GetUserRequest) returns (GetUserResponse);
+	rpc FindUsersWithFilters(FindUsersWithFiltersRequest) returns (FindUsersWithFiltersResponse);
+}
+
+message User{
+	string id = 1;
+	uint32 role = 2;
+	string post_code = 3;
+	string first_name = 4;
+	string middle_name = 5;
+	string last_name = 6;
+	string phone = 7;
+}
+
+
+
+message CreateUserRequest{
+	User user = 1;
+}
+message CreateUserResponse{
+	User user = 1;
+}
+
+
+
+message DeleteUserRequest{
+	string id = 1;
+}
+message DeleteUserResponse{
+	User user = 1;
+}
+
+
+
+message UpdateUserRequest{
+	User user = 1;
+}
+message UpdateUserResponse{
+	User user = 1;
+}
+
+
+
+message GetUserRequest{
+	string id = 1;
+}
+message GetUserResponse{
+	User user = 1;
+}
+
+
+
+message FindUsersWithFiltersRequest{
+	string name = 1;
+	uint32 role = 2;
+	string post_code = 3;
+}
+message FindUsersWithFiltersResponse{
+	repeated User users = 1;
+}
+
+
+
+
+
