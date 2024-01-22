@@ -31,7 +31,7 @@ namespace UsersService.Services
 
             User user = new User()
             {
-                Id = user_id,
+                id = user_id,
                 role = request.User.Role,
                 post_code = request.User.PostCode,
                 first_name = request.User.FirstName,
@@ -69,7 +69,7 @@ namespace UsersService.Services
                 {
                     User = new Protos.User
                     {
-                        Id = user.Id.ToString(),
+                        Id = user.id.ToString(),
                         Role = user.role,
                         PostCode = user.post_code,
                         FirstName = user.first_name,
@@ -84,7 +84,7 @@ namespace UsersService.Services
         {
             User user = new User()
             {
-                Id = Guid.Parse(request.User.Id),
+                id = Guid.Parse(request.User.Id),
                 role = request.User.Role,
                 post_code = request.User.PostCode,
                 first_name = request.User.FirstName,
@@ -104,7 +104,7 @@ namespace UsersService.Services
                 {
                     User = new Protos.User
                     {
-                        Id = user.Id.ToString(),
+                        Id = user.id.ToString(),
                         Role = user.role,
                         PostCode = user.post_code,
                         FirstName = user.first_name,
@@ -128,7 +128,7 @@ namespace UsersService.Services
                 {
                     User = new Protos.User
                     {
-                        Id = user.Id.ToString(),
+                        Id = user.id.ToString(),
                         Role = user.role,
                         PostCode = user.post_code,
                         FirstName = user.first_name,
@@ -150,7 +150,7 @@ namespace UsersService.Services
             {
                 findWithFiltersResponse.Users.Add(new Protos.User
                 {
-                    Id = user.Id.ToString(),
+                    Id = user.id.ToString(),
                     Role = user.role,
                     PostCode = user.post_code,
                     FirstName = user.first_name,

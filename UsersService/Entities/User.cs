@@ -5,10 +5,9 @@ namespace UsersService.Entities
     public class User
     {
         [Key]
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid id { get; set; } = Guid.NewGuid();
 
         [Required]
-        [MaxLength(255)]
         public uint role { get; set; }
 
         [Required]
@@ -31,5 +30,14 @@ namespace UsersService.Entities
         [MaxLength(15)]
         public string phone { get; set; }
 
+
+        [Required]
+        [MaxLength(30)]
+        public string login { get; set; }
+
+        [Required]
+        public byte[] HashPassword { get; set; }
+
+        
     }
 }
