@@ -31,6 +31,7 @@ namespace UsersService
             services.AddScoped<UsersRepository>();
             services.AddScoped<UsersServiceImplementation>();
             services.AddScoped<CacheService>();
+            services.AddScoped<AuthService>();
 
             services.AddGrpc();
         }

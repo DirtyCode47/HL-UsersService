@@ -6,6 +6,7 @@ using User = UsersService.Entities.User;
 using UsersService.Cache;
 using static Grpc.Core.Metadata;
 using Microsoft.Extensions.Hosting;
+using UsersService.Entities;
 
 
 namespace UsersService.Services
@@ -14,15 +15,20 @@ namespace UsersService.Services
     {
         private readonly UsersRepository _usersRepository;
         private readonly CacheService _cacheService;
-        public UsersServiceImplementation(UsersRepository usersRepository, CacheService cacheService)
+        private readonly AuthService _authService;
+        public UsersServiceImplementation(UsersRepository usersRepository, CacheService cacheService, AuthService authService)
         {
             _usersRepository = usersRepository ?? throw new ArgumentNullException(nameof(usersRepository));
             _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         }
 
-        public async Task<CreateUserResponse> Create(CreateUserRequest request, ServerCallContext context)
+        public override async Task<CreateUserResponse> CreateUser(CreateUserRequest request, ServerCallContext context)
         {
             Guid user_id = Guid.Parse(request.User.Id);
+
+            byte[] password_salt = _authService.GenerateRandomSalt(16);
+            byte[] password_hash = _authService.CreatePasswordHash(request.User.Password, password_salt);
 
             User user = new User()
             {
@@ -33,6 +39,9 @@ namespace UsersService.Services
                 middle_name = request.User.MiddleName,
                 last_name = request.User.LastName,
                 phone = request.User.Phone,
+                login = request.User.Login,
+                PasswordHash = password_hash,
+                PasswordSalt = password_salt
             };
 
             if (await _usersRepository.GetUserAsync(user_id) != null)
@@ -50,7 +59,7 @@ namespace UsersService.Services
             };
         }
 
-        public async Task<DeleteUserResponse> Delete(DeleteUserRequest request, ServerCallContext context)
+        public override async Task<DeleteUserResponse> DeleteUser(DeleteUserRequest request, ServerCallContext context)
         {
             Guid user_id = Guid.Parse(request.Id);
 
@@ -79,7 +88,7 @@ namespace UsersService.Services
             };
         }
 
-        public async Task<UpdateUserResponse> Update(UpdateUserRequest request, ServerCallContext context)
+        public override async Task<UpdateUserResponse> UpdateUser(UpdateUserRequest request, ServerCallContext context)
         {
             Guid postId = Guid.Parse(request.User.Id);
 
@@ -123,7 +132,7 @@ namespace UsersService.Services
             };
         }
 
-        public async Task<GetUserResponse> Get(GetUserRequest request, ServerCallContext context)
+        public override async Task<GetUserResponse> GetUser(GetUserRequest request, ServerCallContext context)
         {
             Guid guid = Guid.Parse(request.Id);
 
@@ -154,7 +163,7 @@ namespace UsersService.Services
             };
         }
 
-        public Task<FindUsersWithFiltersResponse> FindWithFilters(FindUsersWithFiltersRequest request, ServerCallContext context)
+        public override Task<FindUsersWithFiltersResponse> FindUsersWithFilters(FindUsersWithFiltersRequest request, ServerCallContext context)
         {
             var users = _usersRepository.FindUsersWithFilters(request.Name,request.Role,request.PostCode);
             if (!users.Any()) throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find elements in page"));
@@ -177,5 +186,26 @@ namespace UsersService.Services
 
             return Task.FromResult(findWithFiltersResponse);
         }
+
+        //public override Task<LoginUserResponse> LoginUser(LoginUserRequest request, ServerCallContext context)
+        //{
+        //    //if (user.Username != request.Username)
+        //    //{
+        //    //    return BadRequest("User not found.");
+        //    //}
+
+        //    //if (!VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
+        //    //{
+        //    //    return BadRequest("Wrong password.");
+        //    //}
+
+        //    //string token = CreateToken(user);
+
+        //    //var refreshToken = GenerateRefreshToken();
+        //    //SetRefreshToken(refreshToken);
+
+        //    //return Ok(token);
+
+        //}
     }
 }

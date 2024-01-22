@@ -8,6 +8,7 @@ service UsersService {
 	rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
 	rpc GetUser(GetUserRequest) returns (GetUserResponse);
 	rpc FindUsersWithFilters(FindUsersWithFiltersRequest) returns (FindUsersWithFiltersResponse);
+	rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
 }
 
 message User{
@@ -18,6 +19,8 @@ message User{
 	string middle_name = 5;
 	string last_name = 6;
 	string phone = 7;
+	string login = 8;
+	string password = 9;
 }
 
 
@@ -67,6 +70,15 @@ message FindUsersWithFiltersResponse{
 	repeated User users = 1;
 }
 
+
+
+message LoginUserRequest{
+	string login = 1;
+	string password = 2;
+}
+message LoginUserResponse{
+	string token = 1;
+}
 
 
 

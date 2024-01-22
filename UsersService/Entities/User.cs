@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using System.ComponentModel.DataAnnotations;
 
 namespace UsersService.Entities
 {
@@ -36,8 +37,9 @@ namespace UsersService.Entities
         public string login { get; set; }
 
         [Required]
-        public byte[] HashPassword { get; set; }
-
+        public byte[] PasswordHash { get; set; }
         
+        [Required]
+        public byte[] PasswordSalt { get; set; }
     }
 }
