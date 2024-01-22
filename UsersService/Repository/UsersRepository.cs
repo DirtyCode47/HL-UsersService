@@ -19,6 +19,12 @@ namespace UsersService.Repository
             return dbContext.Users.Add(user).Entity;
         }
 
+        public async Task<User> CreateUserAsync(User user)
+        {
+            var added_user = await dbContext.Users.AddAsync(user);
+            return added_user.Entity;
+        }
+
         public User DeleteUser(Guid id)
         {
             return dbContext.Users.Remove(GetUser(id)).Entity;
@@ -34,15 +40,30 @@ namespace UsersService.Repository
             return dbContext.Users.Find(id);
         }
 
+        public async Task<User> GetUserAsync(Guid id)
+        {
+            return await dbContext.Users.FindAsync(id);
+        }
+
         public IEnumerable<User> FindUsersWithFilters(string fullname, uint role, string post_code)
         {
             var splittedFullName = fullname.Split(' ');
             return dbContext.Users.Where(u => isNeededUser(u, splittedFullName, role, post_code));
         }
 
+        public IEnumerable<User> GetAllUsers()
+        {
+            return dbContext.Users;
+        }
+
         public void Complete()
         {
             dbContext.SaveChanges();
+        }
+
+        public async Task<int> CompleteAsync()
+        {
+            return await dbContext.SaveChangesAsync();
         }
 
         private bool isNeededUser(User user, string[] nameParts, uint role, string post_code)
@@ -69,6 +90,7 @@ namespace UsersService.Repository
                 skipPostCode = true;
                 neededCoincidenceCount--;
             }
+
             if(neededCoincidenceCount == 0) { return false; }
 
 
