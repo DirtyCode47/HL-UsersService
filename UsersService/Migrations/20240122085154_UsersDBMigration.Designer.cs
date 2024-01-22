@@ -12,7 +12,7 @@ using UsersService.Repository;
 namespace UsersService.Migrations
 {
     [DbContext(typeof(UsersDbContext))]
-    [Migration("20240122053605_UsersDBMigration")]
+    [Migration("20240122085154_UsersDBMigration")]
     partial class UsersDBMigration
     {
         /// <inheritdoc />
@@ -27,9 +27,13 @@ namespace UsersService.Migrations
 
             modelBuilder.Entity("UsersService.Entities.User", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<byte[]>("HashPassword")
+                        .IsRequired()
+                        .HasColumnType("bytea");
 
                     b.Property<string>("first_name")
                         .IsRequired()
@@ -40,6 +44,11 @@ namespace UsersService.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<string>("login")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("middle_name")
                         .IsRequired()
@@ -57,10 +66,9 @@ namespace UsersService.Migrations
                         .HasColumnType("character varying(5)");
 
                     b.Property<long>("role")
-                        .HasMaxLength(255)
                         .HasColumnType("bigint");
 
-                    b.HasKey("Id");
+                    b.HasKey("id");
 
                     b.ToTable("Users");
                 });
