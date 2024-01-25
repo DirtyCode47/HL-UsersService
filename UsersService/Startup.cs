@@ -73,6 +73,7 @@ namespace UsersService
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGrpcService<UsersServiceImplementation>();
+                endpoints.MapGrpcService<AuthServiceImplementation>();
             });
         }
 

@@ -32,7 +32,14 @@ namespace UsersService.Services
 
         public override async Task<CreateUserResponse> CreateUser(CreateUserRequest request, ServerCallContext context)
         {
-            Guid user_id = Guid.Parse(request.User.Id);
+            //Guid user_id = Guid.Parse(request.User.Id);
+            Guid user_id = Guid.NewGuid();
+
+            if (await _usersRepository.GetUserAsync(user_id) != null)
+                throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this id already exists"));
+
+            if(await _usersRepository.FindByPostCode(request.User.PostCode) != null)
+                throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
 
             byte[] password_salt = _securityService.GenerateRandomSalt(16);
             byte[] password_hash = _securityService.CreatePasswordHash(request.User.Password, password_salt);
@@ -49,11 +56,7 @@ namespace UsersService.Services
                 login = request.User.Login,
                 PasswordHash = password_hash,
                 PasswordSalt = password_salt,
-                
             };
-
-            if (await _usersRepository.GetUserAsync(user_id) != null)
-                throw new RpcException(new Status(StatusCode.AlreadyExists, "This record already exist in Db"));
 
             User added_user = await _usersRepository.CreateUserAsync(user);
             await _usersRepository.CompleteAsync();
@@ -73,7 +76,7 @@ namespace UsersService.Services
 
             User user = await _usersRepository.GetUserAsync(user_id);
             if (user == null)
-                throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find record in Db with this id"));
+                throw new RpcException(new Status(StatusCode.NotFound, "Can't find record in Db with this id"));
 
             _usersRepository.DeleteUser(user_id);
             await _usersRepository.CompleteAsync();
@@ -92,6 +95,7 @@ namespace UsersService.Services
                     MiddleName = user.middle_name,
                     LastName = user.last_name,
                     Phone = user.phone,
+                    Login = user.login,
                 }
             };
         }
@@ -99,22 +103,30 @@ namespace UsersService.Services
         public override async Task<UpdateUserResponse> UpdateUser(UpdateUserRequest request, ServerCallContext context)
         {
             Guid postId = Guid.Parse(request.User.Id);
-
-            // Найти существующую сущность по Id
+            
             var existingUser = await _usersRepository.GetUserAsync(postId);
 
             if (existingUser == null)
             {
-                throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find a record in the database with this id"));
+                throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
             }
 
-            // Обновить свойства существующей сущности
+            if (await _usersRepository.FindByPostCode(request.User.PostCode) != null)
+            {
+                throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
+            }
+
+            byte[] password_salt = _securityService.GenerateRandomSalt(16);
+            byte[] password_hash = _securityService.CreatePasswordHash(request.User.Password, password_salt);
+
             existingUser.role = request.User.Role;
             existingUser.post_code = request.User.PostCode;
             existingUser.first_name = request.User.FirstName;
             existingUser.middle_name = request.User.MiddleName;
             existingUser.last_name = request.User.LastName;
             existingUser.phone = request.User.Phone;
+            existingUser.PasswordHash = password_hash;
+            existingUser.PasswordSalt = password_salt;
 
             var entry = _usersRepository.UpdateUser(existingUser);
             if (entry == null) 
@@ -149,12 +161,15 @@ namespace UsersService.Services
             {
                 // Если записи нет в кэше, пытаемся получить из базы данных
                 user = await _usersRepository.GetUserAsync(guid);
+
                 if (user == null)
-                    throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find a record in the database with this id"));
+                    throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
+
+                // добавляем в кэш
+                _cacheService.AddOrUpdateCache($"post:{user.id}", user);
             }
 
-            // добавляем в кэш
-            _cacheService.AddOrUpdateCache($"post:{user.id}", user);
+            
 
             return new GetUserResponse
             {

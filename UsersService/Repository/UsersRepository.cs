@@ -62,6 +62,11 @@ namespace UsersService.Repository
             return dbContext.Users;
         }
 
+        public async Task<User?> FindByPostCode(string post_code)
+        {
+            return await dbContext.Users.FirstOrDefaultAsync(p => p.post_code == post_code);
+        }
+
         public void Complete()
         {
             dbContext.SaveChanges();
