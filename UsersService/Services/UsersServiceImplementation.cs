@@ -7,6 +7,11 @@ using UsersService.Cache;
 using static Grpc.Core.Metadata;
 using Microsoft.Extensions.Hosting;
 using UsersService.Entities;
+using System.Security.Principal;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.Extensions.Configuration;
 
 
 namespace UsersService.Services
@@ -15,20 +20,22 @@ namespace UsersService.Services
     {
         private readonly UsersRepository _usersRepository;
         private readonly CacheService _cacheService;
-        private readonly AuthService _authService;
-        public UsersServiceImplementation(UsersRepository usersRepository, CacheService cacheService, AuthService authService)
+        private readonly SecurityService _securityService;
+        private readonly IConfiguration _configuration;
+        public UsersServiceImplementation(UsersRepository usersRepository, CacheService cacheService, SecurityService authService, IConfiguration configuration)
         {
             _usersRepository = usersRepository ?? throw new ArgumentNullException(nameof(usersRepository));
             _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _securityService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         public override async Task<CreateUserResponse> CreateUser(CreateUserRequest request, ServerCallContext context)
         {
             Guid user_id = Guid.Parse(request.User.Id);
 
-            byte[] password_salt = _authService.GenerateRandomSalt(16);
-            byte[] password_hash = _authService.CreatePasswordHash(request.User.Password, password_salt);
+            byte[] password_salt = _securityService.GenerateRandomSalt(16);
+            byte[] password_hash = _securityService.CreatePasswordHash(request.User.Password, password_salt);
 
             User user = new User()
             {
@@ -41,7 +48,8 @@ namespace UsersService.Services
                 phone = request.User.Phone,
                 login = request.User.Login,
                 PasswordHash = password_hash,
-                PasswordSalt = password_salt
+                PasswordSalt = password_salt,
+                
             };
 
             if (await _usersRepository.GetUserAsync(user_id) != null)
@@ -75,7 +83,7 @@ namespace UsersService.Services
 
             return new DeleteUserResponse
             {
-                User = new Protos.User
+                User = new Protos.UserDTO
                 {
                     Id = user.id.ToString(),
                     Role = user.role,
@@ -119,7 +127,7 @@ namespace UsersService.Services
 
             return new UpdateUserResponse
             {
-                User = new Protos.User
+                User = new Protos.UserDTO
                 {
                     Id = existingUser.id.ToString(),
                     Role = existingUser.role,
@@ -150,7 +158,7 @@ namespace UsersService.Services
 
             return new GetUserResponse
             {
-                User = new Protos.User
+                User = new Protos.UserDTO
                 {
                     Id = user.id.ToString(),
                     Role = user.role,
@@ -172,7 +180,7 @@ namespace UsersService.Services
 
             foreach (var user in users)
             {
-                findWithFiltersResponse.Users.Add(new Protos.User
+                findWithFiltersResponse.Users.Add(new Protos.UserDTO
                 {
                     Id = user.id.ToString(),
                     Role = user.role,
@@ -187,25 +195,5 @@ namespace UsersService.Services
             return Task.FromResult(findWithFiltersResponse);
         }
 
-        //public override Task<LoginUserResponse> LoginUser(LoginUserRequest request, ServerCallContext context)
-        //{
-        //    //if (user.Username != request.Username)
-        //    //{
-        //    //    return BadRequest("User not found.");
-        //    //}
-
-        //    //if (!VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
-        //    //{
-        //    //    return BadRequest("Wrong password.");
-        //    //}
-
-        //    //string token = CreateToken(user);
-
-        //    //var refreshToken = GenerateRefreshToken();
-        //    //SetRefreshToken(refreshToken);
-
-        //    //return Ok(token);
-
-        //}
     }
 }

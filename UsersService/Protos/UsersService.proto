@@ -7,11 +7,11 @@ service UsersService {
 	rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
 	rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
 	rpc GetUser(GetUserRequest) returns (GetUserResponse);
+	rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
 	rpc FindUsersWithFilters(FindUsersWithFiltersRequest) returns (FindUsersWithFiltersResponse);
-	rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
 }
 
-message User{
+message UserDTO{
 	string id = 1;
 	uint32 role = 2;
 	string post_code = 3;
@@ -26,10 +26,10 @@ message User{
 
 
 message CreateUserRequest{
-	User user = 1;
+	UserDTO user = 1;
 }
 message CreateUserResponse{
-	User user = 1;
+	UserDTO user = 1;
 }
 
 
@@ -38,16 +38,16 @@ message DeleteUserRequest{
 	string id = 1;
 }
 message DeleteUserResponse{
-	User user = 1;
+	UserDTO user = 1;
 }
 
 
 
 message UpdateUserRequest{
-	User user = 1;
+	UserDTO user = 1;
 }
 message UpdateUserResponse{
-	User user = 1;
+	UserDTO user = 1;
 }
 
 
@@ -56,10 +56,15 @@ message GetUserRequest{
 	string id = 1;
 }
 message GetUserResponse{
-	User user = 1;
+	UserDTO user = 1;
 }
 
+message GetAllUsersRequest{
 
+}
+message GetAllUsersResponse{
+	repeated UserDTO users = 1;
+}
 
 message FindUsersWithFiltersRequest{
 	string name = 1;
@@ -67,18 +72,15 @@ message FindUsersWithFiltersRequest{
 	string post_code = 3;
 }
 message FindUsersWithFiltersResponse{
-	repeated User users = 1;
+	repeated UserDTO users = 1;
 }
 
 
 
-message LoginUserRequest{
-	string login = 1;
-	string password = 2;
-}
-message LoginUserResponse{
-	string token = 1;
-}
+
+
+
+
 
 
 

@@ -1,0 +1,46 @@
+syntax = "proto3";
+option csharp_namespace = "UsersService.Protos";
+
+service AuthService {
+	rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
+	rpc ValidateAccessToken(ValidateAccessTokenRequest) returns (ValidateAccessTokenResponse);
+	rpc ValidateAccessTokenLifetime(ValidateAccessTokenLifetimeRequest) returns (ValidateAccessTokenLifetimeResponse);
+	rpc ValidateRefreshTokenLifetime(ValidateRefreshTokenLifetimeRequest) returns (ValidateRefreshTokenLifetimeResponse);
+}
+
+
+message LoginUserRequest{
+	string login = 1;
+	string password = 2;
+}
+message LoginUserResponse{
+	string access_token = 1;
+	string refresh_token = 2;
+}
+
+
+message ValidateAccessTokenRequest{
+	string access_token = 1;
+}
+message ValidateAccessTokenResponse{
+	bool success = 1;
+}
+
+
+message ValidateAccessTokenLifetimeRequest{
+	string access_token = 1;
+}
+message ValidateAccessTokenLifetimeResponse{
+	bool success = 1;
+}
+
+
+
+message ValidateRefreshTokenLifetimeRequest{
+	string refresh_token = 1;
+}
+message ValidateRefreshTokenLifetimeResponse{
+	bool success = 1;
+	string access_token = 2;
+	string refresh_token = 3;
+}

@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
-
 using UsersService.Repository;
 using UsersService.Services;
 using UsersService.Cache;
 using Newtonsoft.Json;
+using UsersService.Protos;
 
 namespace UsersService
 {
@@ -30,8 +30,9 @@ namespace UsersService
 
             services.AddScoped<UsersRepository>();
             services.AddScoped<UsersServiceImplementation>();
+            services.AddScoped<AuthServiceImplementation>();
+            services.AddScoped<SecurityService>();
             services.AddScoped<CacheService>();
-            services.AddScoped<AuthService>();
 
             services.AddGrpc();
         }
