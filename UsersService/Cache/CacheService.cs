@@ -14,6 +14,10 @@ namespace UsersService.Cache
             _redisConnection = redisConnection ?? throw new ArgumentNullException(nameof(redisConnection));
         }
 
+        public IConnectionMultiplexer GetRedisConnection()
+        {
+            return _redisConnection;
+        }
         public void AddOrUpdateCache<T>(string key, T data)
         {
             var database = _redisConnection.GetDatabase();

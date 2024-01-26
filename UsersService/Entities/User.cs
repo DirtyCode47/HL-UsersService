@@ -41,5 +41,7 @@ namespace UsersService.Entities
         
         [Required]
         public byte[] PasswordSalt { get; set; }
+
+        public Guid JwtId { get; set; }
     }
 }

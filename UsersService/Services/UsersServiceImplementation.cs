@@ -56,13 +56,14 @@ namespace UsersService.Services
                 login = request.User.Login,
                 PasswordHash = password_hash,
                 PasswordSalt = password_salt,
+                JwtId = Guid.NewGuid()
             };
 
             User added_user = await _usersRepository.CreateUserAsync(user);
             await _usersRepository.CompleteAsync();
 
             // Обновляем кэш
-            _cacheService.AddOrUpdateCache($"post:{added_user.id}", added_user);
+            _cacheService.AddOrUpdateCache($"user:{added_user.id}", added_user);
 
             return new CreateUserResponse
             {
@@ -82,7 +83,7 @@ namespace UsersService.Services
             await _usersRepository.CompleteAsync();
 
             // Удаляем из кэша
-            _cacheService.ClearCache($"post:{user.id}");
+            _cacheService.ClearCache($"user:{user.id}");
 
             return new DeleteUserResponse
             {
@@ -135,7 +136,7 @@ namespace UsersService.Services
             await _usersRepository.CompleteAsync();
 
             // Обновить кэш
-            _cacheService.AddOrUpdateCache($"post:{entry.id}", entry);
+            _cacheService.AddOrUpdateCache($"user:{entry.id}", entry);
 
             return new UpdateUserResponse
             {
@@ -156,7 +157,7 @@ namespace UsersService.Services
         {
             Guid guid = Guid.Parse(request.Id);
 
-            User user = _cacheService.GetFromCache<User>($"post:{guid}");
+            User user = _cacheService.GetFromCache<User>($"user:{guid}");
             if (user == null)
             {
                 // Если записи нет в кэше, пытаемся получить из базы данных
@@ -166,7 +167,7 @@ namespace UsersService.Services
                     throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
 
                 // добавляем в кэш
-                _cacheService.AddOrUpdateCache($"post:{user.id}", user);
+                _cacheService.AddOrUpdateCache($"user:{user.id}", user);
             }
 
             

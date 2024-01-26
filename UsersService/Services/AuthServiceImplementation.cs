@@ -8,6 +8,9 @@ using UsersService.Protos;
 using UsersService.Repository;
 using UsersService.Entities;
 using Newtonsoft.Json;
+using StackExchange.Redis;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace UsersService.Services
 {
@@ -68,6 +71,18 @@ namespace UsersService.Services
 
                 SecurityToken validatedToken;
                 var principal = tokenHandler.ValidateToken(request.AccessToken, tokenValidationParameters, out validatedToken);
+
+                
+
+                var handler = new JwtSecurityTokenHandler();  //Проверка на то, есть ли токен в блэклисте
+                var jsonToken = handler.ReadToken(request.AccessToken) as JwtSecurityToken;
+
+                var jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "JwtId");
+
+                if (_cacheService.GetFromCache<string>($"blacklist:{jwt_id}") != null)
+                {
+                    return Task.FromResult(new ValidateAccessTokenResponse() { Success = false });
+                }
 
                 // Если успешно прошли основную проверку, валидация считается успешной
                 return Task.FromResult(new ValidateAccessTokenResponse() { Success = true });
@@ -133,9 +148,29 @@ namespace UsersService.Services
             return Task.FromResult(response);
         }
 
-        //public override Task<RegenerateTokensResponse> RegenerateTokens(RegenerateTokensRequest request, ServerCallContext context)
+        public override Task<RegenerateTokensResponse> RegenerateTokens(RegenerateTokensRequest request, ServerCallContext context)
+        {
+            string jwtToken = request.OldAccessToken; 
+
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
+
+            var old_jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "JwtId");
+
+            _cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id.ToString()}", old_jwt_id.ToString()); //Добавляем в черный лист
+
+            User user = _usersRepository.GetUser(Guid.Parse(request.UserId));
+
+            user.JwtId = Guid.NewGuid();
+            string access_token = _securityService.CreateToken(user);
+            string refresh_token = _securityService.GenerateRefreshToken().ToJson();
+
+            return Task.FromResult(new RegenerateTokensResponse() { AccessToken = access_token, RefreshToken = refresh_token });
+        }
+
+        //public override Task<LogoutUserResponse> LogoutUser(LogoutUserRequest request, ServerCallContext context)
         //{
-            
+
         //}
     }
 }

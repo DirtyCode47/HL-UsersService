@@ -72,6 +72,7 @@ namespace UsersService.Services
         {
             List<Claim> claims = new List<Claim>
             {
+                new Claim("JwtId", user.JwtId.ToString()),
                 new Claim(ClaimTypes.Name, user.login),
                 new Claim(ClaimTypes.Role, Convert.ToString(user.role)),
             };
