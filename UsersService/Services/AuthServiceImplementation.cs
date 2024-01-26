@@ -7,6 +7,7 @@ using UsersService.Cache;
 using UsersService.Protos;
 using UsersService.Repository;
 using UsersService.Entities;
+using Newtonsoft.Json;
 
 namespace UsersService.Services
 {
@@ -45,6 +46,11 @@ namespace UsersService.Services
 
         public override Task<ValidateAccessTokenResponse> ValidateAccessToken(ValidateAccessTokenRequest request, ServerCallContext context)
         {
+            if (request.AccessToken == null)
+            {
+                return Task.FromResult(new ValidateAccessTokenResponse() { Success = false });
+            }
+
             try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
@@ -75,39 +81,61 @@ namespace UsersService.Services
 
 
 
-        //public override Task<ValidateTokenLifetimeResponse> ValidateTokenLifetime(ValidateTokenLifetimeRequest request, ServerCallContext context)
+        public override Task<ValidateAccessTokenLifetimeResponse> ValidateAccessTokenLifetime(ValidateAccessTokenLifetimeRequest request, ServerCallContext context)
+        {
+            if (request.AccessToken == null)
+            {
+                return Task.FromResult(new ValidateAccessTokenLifetimeResponse() { Success = false });
+            }
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:Token").Value); 
+
+                var tokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true, // Включаем проверку времени жизни
+                    ClockSkew = TimeSpan.Zero // Устанавливаем отсутствие дополнительного времени (ClockSkew) для точной проверки
+                };
+
+                SecurityToken validatedToken;
+                var principal = tokenHandler.ValidateToken(request.AccessToken, tokenValidationParameters, out validatedToken);
+
+                // Если успешно прошли валидацию времени жизни, валидация считается успешной
+                return Task.FromResult(new ValidateAccessTokenLifetimeResponse() { Success = true });
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                // Токен истек и срок его действия завершен
+                return Task.FromResult(new ValidateAccessTokenLifetimeResponse() { Success = false });
+            }
+            catch (Exception)
+            {
+                // В случае других ошибок валидации, считаем токен невалидным
+                return Task.FromResult(new ValidateAccessTokenLifetimeResponse() { Success = false });
+            }
+        }
+
+
+        public override Task<ValidateRefreshTokenLifetimeResponse> ValidateRefreshTokenLifetime(ValidateRefreshTokenLifetimeRequest request, ServerCallContext context)
+        {
+            RefreshToken refreshToken = JsonConvert.DeserializeObject<RefreshToken>(request.RefreshToken);
+
+            ValidateRefreshTokenLifetimeResponse response = (refreshToken.Expires < DateTime.UtcNow) ?
+                new ValidateRefreshTokenLifetimeResponse() { Success = false } :
+                new ValidateRefreshTokenLifetimeResponse() { Success = true };
+
+            return Task.FromResult(response);
+        }
+
+        //public override Task<RegenerateTokensResponse> RegenerateTokens(RegenerateTokensRequest request, ServerCallContext context)
         //{
-        //    try
-        //    {
-
-        //        var tokenHandler = new JwtSecurityTokenHandler();
-        //        var access_token = tokenHandler.ReadToken(request.AccessToken) as JwtSecurityToken;
-
-
-
-
-        //        if (access_token == null)
-        //        {
-        //            return Task.FromResult(new ValidateTokenLifetimeResponse() { Success = false, AccessToken = "", RefreshToken = "" });
-        //        }
-
-        //        bool success = (access_token.ValidTo > DateTime.UtcNow) ? true : false;
-
-        //        if (!success) 
-        //        {
-        //            RefreshToken refreshTokenData = RefreshToken.FromJson(request.RefreshToken);
-        //            if
-        //        }
-
-
-        //            return success;
-
-        //    }
-        //    catch (Exception ex)
-        //    {
-
-        //        return false;
-        //    }
+            
         //}
     }
 }
