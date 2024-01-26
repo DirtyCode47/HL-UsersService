@@ -13,7 +13,7 @@ service UsersService {
 
 message UserDTO{
 	string id = 1;
-	uint32 role = 2;
+	string role = 2;
 	string post_code = 3;
 	string first_name = 4;
 	string middle_name = 5;
@@ -68,7 +68,7 @@ message GetAllUsersResponse{
 
 message FindUsersWithFiltersRequest{
 	string name = 1;
-	uint32 role = 2;
+	string role = 2;
 	string post_code = 3;
 }
 message FindUsersWithFiltersResponse{

@@ -9,7 +9,8 @@ namespace UsersService.Entities
         public Guid id { get; set; } = Guid.NewGuid();
 
         [Required]
-        public uint role { get; set; }
+        [MaxLength(255)]
+        public string role { get; set; }
 
         [Required]
         [MaxLength(5)]

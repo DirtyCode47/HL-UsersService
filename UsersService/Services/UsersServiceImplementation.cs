@@ -73,7 +73,11 @@ namespace UsersService.Services
 
         public override async Task<DeleteUserResponse> DeleteUser(DeleteUserRequest request, ServerCallContext context)
         {
-            Guid user_id = Guid.Parse(request.Id);
+
+            if (!Guid.TryParse(request.Id, out Guid user_id))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
+            }
 
             User user = await _usersRepository.GetUserAsync(user_id);
             if (user == null)
@@ -103,9 +107,12 @@ namespace UsersService.Services
 
         public override async Task<UpdateUserResponse> UpdateUser(UpdateUserRequest request, ServerCallContext context)
         {
-            Guid postId = Guid.Parse(request.User.Id);
-            
-            var existingUser = await _usersRepository.GetUserAsync(postId);
+            if (!Guid.TryParse(request.User.Id, out Guid user_id))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
+            }
+
+            var existingUser = await _usersRepository.GetUserAsync(user_id);
 
             if (existingUser == null)
             {
@@ -155,7 +162,10 @@ namespace UsersService.Services
 
         public override async Task<GetUserResponse> GetUser(GetUserRequest request, ServerCallContext context)
         {
-            Guid guid = Guid.Parse(request.Id);
+            if(!Guid.TryParse(request.Id, out Guid guid))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
+            }
 
             User user = _cacheService.GetFromCache<User>($"user:{guid}");
             if (user == null)

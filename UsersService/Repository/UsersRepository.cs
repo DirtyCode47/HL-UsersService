@@ -51,7 +51,7 @@ namespace UsersService.Repository
             return user;
         }
 
-        public IEnumerable<User> FindUsersWithFilters(string fullname, uint role, string post_code)
+        public IEnumerable<User> FindUsersWithFilters(string fullname, string role, string post_code)
         {
             var splittedFullName = fullname.Split(' ');
             return dbContext.Users.Where(u => isNeededUser(u, splittedFullName, role, post_code));
@@ -77,7 +77,7 @@ namespace UsersService.Repository
             return await dbContext.SaveChangesAsync();
         }
 
-        private bool isNeededUser(User user, string[] nameParts, uint role, string post_code)
+        private bool isNeededUser(User user, string[] nameParts, string role, string post_code)
         {
             bool skipName = false;
             bool skipRole = false;
@@ -91,7 +91,7 @@ namespace UsersService.Repository
                 skipName = true;
                 neededCoincidenceCount--;
             }
-            if (role == 0)
+            if (role == "")
             {
                 skipRole = true;
                 neededCoincidenceCount--;

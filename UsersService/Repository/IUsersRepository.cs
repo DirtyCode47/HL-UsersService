@@ -9,6 +9,6 @@ namespace UsersService.Repository
         public User DeleteUser(Guid id);
         public User UpdateUser(User user);
         public User GetUser(Guid id);
-        public IEnumerable<User> FindUsersWithFilters(string fullname, uint role, string post_code);
+        public IEnumerable<User> FindUsersWithFilters(string fullname, string role, string post_code);
     }
 }

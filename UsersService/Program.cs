@@ -15,7 +15,7 @@ namespace UsersService
                 {
                     webBuilder.ConfigureKestrel(options =>
                     {
-                        options.ListenAnyIP(5049, listenOptions =>
+                        options.ListenAnyIP(50054, listenOptions =>
                         {
                             listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
                         });
