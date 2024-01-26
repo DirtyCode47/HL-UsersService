@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using Google.Protobuf.Collections;
 
 
 namespace UsersService.Services
@@ -195,6 +196,35 @@ namespace UsersService.Services
                     Phone = user.phone,
                 }
             };
+        }
+
+        public override Task<GetAllUsersResponse> GetAllUsers(GetAllUsersRequest request, ServerCallContext context)
+        {
+            var Users = _cacheService.GetAllFromCache<User>("user:*");
+
+            if (Users == null)
+            {
+                Users = _usersRepository.GetAllUsers().ToList(); //Надо не забыть добавить в кэш
+            }
+
+
+            var response = new GetAllUsersResponse();
+
+            foreach (var user in Users)
+            {
+                response.Users.Add(new UserDTO
+                {
+                    Id = user.id.ToString(),
+                    Role = user.role,
+                    PostCode = user.post_code,
+                    FirstName = user.first_name,
+                    MiddleName = user.middle_name,
+                    LastName = user.last_name,
+                    Phone = user.phone,
+                });
+            }
+
+            return Task.FromResult(response);
         }
 
         public override Task<FindUsersWithFiltersResponse> FindUsersWithFilters(FindUsersWithFiltersRequest request, ServerCallContext context)
