@@ -29,22 +29,25 @@ namespace UsersService.Services
         }
         public override Task<LoginUserResponse> LoginUser(LoginUserRequest request, ServerCallContext context)
         {
-            User? user = _usersRepository.GetUserByLogin(request.Login);
+            //User? user = _usersRepository.GetUserByLogin(request.Login);
 
-            if (user is null)
-            {
-                throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find user with such login!"));
-            }
+            //if (user is null)
+            //{
+            //    throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find user with such login!"));
+            //}
 
-            if (!_securityService.VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
-            {
-                throw new RpcException(new Status(StatusCode.InvalidArgument, "Password is not correct!"));
-            }
+            //if (!_securityService.VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
+            //{
+            //    throw new RpcException(new Status(StatusCode.InvalidArgument, "Password is not correct!"));
+            //}
 
-            string access_token = _securityService.CreateToken(user);
-            string refresh_token = _securityService.GenerateRefreshToken().ToJson();
+            //string access_token = _securityService.CreateToken(user);
+            //string refresh_token = _securityService.GenerateRefreshToken().ToJson();
 
-            return Task.FromResult(new LoginUserResponse() { AccessToken = access_token, RefreshToken = refresh_token });
+            //return Task.FromResult(new LoginUserResponse() { AccessToken = access_token, RefreshToken = refresh_token });
+
+
+            return null;
         }
 
         public override Task<ValidateAccessTokenResponse> ValidateAccessToken(ValidateAccessTokenRequest request, ServerCallContext context)
@@ -150,22 +153,27 @@ namespace UsersService.Services
 
         public override Task<RegenerateTokensResponse> RegenerateTokens(RegenerateTokensRequest request, ServerCallContext context)
         {
-            string jwtToken = request.OldAccessToken; 
+            //string jwtToken = request.OldAccessToken; 
 
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
+            //var handler = new JwtSecurityTokenHandler();
+            //var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
 
-            var old_jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "JwtId");
+            //var old_jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "JwtId");
 
-            _cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id.ToString()}", old_jwt_id.ToString()); //Добавляем в черный лист
+            //_cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id.ToString()}", old_jwt_id.ToString()); //Добавляем в черный лист
 
-            User user = _usersRepository.GetUser(Guid.Parse(request.UserId));
+            //User user = _usersRepository.GetUser(Guid.Parse(request.UserId));
 
-            user.JwtId = Guid.NewGuid();
-            string access_token = _securityService.CreateToken(user);
-            string refresh_token = _securityService.GenerateRefreshToken().ToJson();
+            //user.JwtId = Guid.NewGuid();
+            //string access_token = _securityService.CreateToken(user);
+            //string refresh_token = _securityService.GenerateRefreshToken().ToJson();
 
-            return Task.FromResult(new RegenerateTokensResponse() { AccessToken = access_token, RefreshToken = refresh_token });
+            //return Task.FromResult(new RegenerateTokensResponse() { AccessToken = access_token, RefreshToken = refresh_token });
+
+
+
+
+            return null;
         }
 
         //public override Task<LogoutUserResponse> LogoutUser(LogoutUserRequest request, ServerCallContext context)

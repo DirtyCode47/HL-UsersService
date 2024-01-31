@@ -45,11 +45,11 @@ namespace UsersService.Repository
             return await dbContext.Users.FindAsync(id);
         }
 
-        public User GetUserByLogin(string login)
-        {
-            var user = dbContext.Users.FirstOrDefault(u => u.login == login);
-            return user;
-        }
+        //public User GetUserByLogin(string login)
+        //{
+        //    var user = dbContext.Users.FirstOrDefault(u => u.login == login);
+        //    return user;
+        //}
 
         public IEnumerable<User> FindUsersWithFilters(string fullname, string role, string post_code)
         {

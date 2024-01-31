@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace UsersService.Entities
@@ -31,18 +32,5 @@ namespace UsersService.Entities
         [Required]
         [MaxLength(15)]
         public string phone { get; set; }
-
-
-        [Required]
-        [MaxLength(30)]
-        public string login { get; set; }
-
-        [Required]
-        public byte[] PasswordHash { get; set; }
-        
-        [Required]
-        public byte[] PasswordSalt { get; set; }
-
-        public Guid JwtId { get; set; }
     }
 }

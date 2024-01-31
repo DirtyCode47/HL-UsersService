@@ -11,5 +11,6 @@ namespace UsersService.Repository
         }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<AuthInfo> AuthInfo { get; set; }
     }
 }

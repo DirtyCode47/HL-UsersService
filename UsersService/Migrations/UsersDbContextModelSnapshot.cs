@@ -22,10 +22,9 @@ namespace UsersService.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("UsersService.Entities.User", b =>
+            modelBuilder.Entity("UsersService.Entities.AuthInfo", b =>
                 {
-                    b.Property<Guid>("id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("JwtId")
@@ -39,6 +38,22 @@ namespace UsersService.Migrations
                         .IsRequired()
                         .HasColumnType("bytea");
 
+                    b.Property<string>("login")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuthInfo");
+                });
+
+            modelBuilder.Entity("UsersService.Entities.User", b =>
+                {
+                    b.Property<Guid>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("first_name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -48,11 +63,6 @@ namespace UsersService.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
-
-                    b.Property<string>("login")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("middle_name")
                         .IsRequired()
@@ -77,6 +87,17 @@ namespace UsersService.Migrations
                     b.HasKey("id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("UsersService.Entities.AuthInfo", b =>
+                {
+                    b.HasOne("UsersService.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }
