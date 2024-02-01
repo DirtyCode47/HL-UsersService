@@ -5,6 +5,7 @@ using UsersService.Services;
 using UsersService.Cache;
 using Newtonsoft.Json;
 using UsersService.Protos;
+using UsersService.Entities;
 
 namespace UsersService
 {
@@ -25,10 +26,11 @@ namespace UsersService
                 return ConnectionMultiplexer.Connect(configuration);
             });
 
-            services.AddDbContext<UsersDbContext>(options =>
+            services.AddDbContext<UserAuthDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddScoped<UsersRepository>();
+            services.AddScoped<AuthRepository>();
             services.AddScoped<UsersServiceImplementation>();
             services.AddScoped<AuthServiceImplementation>();
             services.AddScoped<SecurityService>();
@@ -49,19 +51,44 @@ namespace UsersService
                 app.UseHsts();
             }
 
+            //app.Use(async (context, next) =>
+            //{
+            //    // Получаем сервис провайдер из контекста запроса
+            //    var serviceProvider = context.RequestServices;
+
+            //    // Получаем scoped-сервис PostsRepository
+            //    var usersRepository = serviceProvider.GetRequiredService<UsersRepository>();
+
+            //    var authRepository = serviceProvider.GetRequiredService<AuthRepository>();
+
+            //    // Получаем подключение к Redis
+            //    var connectionMultiplexer = serviceProvider.GetRequiredService<IConnectionMultiplexer>();
+
+            //    // Инициализируем кэш асинхронно
+            //    await InitializeCacheAsync(usersRepository, connectionMultiplexer);
+
+            //    await InitializeCacheAsync(authRepository, connectionMultiplexer);
+
+            //    // Передаем управление следующему middleware
+            //    await next();
+            //});
+
             app.Use(async (context, next) =>
             {
                 // Получаем сервис провайдер из контекста запроса
                 var serviceProvider = context.RequestServices;
 
-                // Получаем scoped-сервис PostsRepository
+                // Получаем scoped-сервис UsersRepository
                 var usersRepository = serviceProvider.GetRequiredService<UsersRepository>();
+
+                // Получаем scoped-сервис AuthRepository
+                var authRepository = serviceProvider.GetRequiredService<AuthRepository>();
 
                 // Получаем подключение к Redis
                 var connectionMultiplexer = serviceProvider.GetRequiredService<IConnectionMultiplexer>();
 
-                // Инициализируем кэш асинхронно
-                await InitializeCacheAsync(usersRepository, connectionMultiplexer);
+                // Инициализируем кэш для UsersRepository
+                await InitializeCacheAsync(usersRepository, authRepository, connectionMultiplexer);
 
                 // Передаем управление следующему middleware
                 await next();
@@ -77,10 +104,11 @@ namespace UsersService
             });
         }
 
-        private async Task InitializeCacheAsync(UsersRepository usersRepository, IConnectionMultiplexer connectionMultiplexer)
+        private async Task InitializeCacheAsync(UsersRepository usersRepository, AuthRepository authRepository, IConnectionMultiplexer connectionMultiplexer)
         {
             // Получаем данные из репозитория
-            var users = usersRepository.GetAllUsers();
+            var users = usersRepository.GetAll();
+            var authInfos = authRepository.GetAll();
 
             // Подключение к Redis
             var database = connectionMultiplexer.GetDatabase();
@@ -88,10 +116,21 @@ namespace UsersService
             // Проходим по всем записям и добавляем/обновляем данные в кэше
             foreach (var user in users)
             {
-                var cacheKey = $"post:{user.id}";
+                var cacheKey = $"user:{user.id}";
 
                 // Преобразовываем объект в JSON (или любой другой формат)
                 var serializedPost = JsonConvert.SerializeObject(user);
+
+                // Записываем данные в Redis
+                await database.StringSetAsync(cacheKey, serializedPost);
+            }
+
+            foreach(var authInfo in authInfos)
+            {
+                var cacheKey = $"user:{authInfo.id}";
+
+                // Преобразовываем объект в JSON (или любой другой формат)
+                var serializedPost = JsonConvert.SerializeObject(authInfo);
 
                 // Записываем данные в Redis
                 await database.StringSetAsync(cacheKey, serializedPost);

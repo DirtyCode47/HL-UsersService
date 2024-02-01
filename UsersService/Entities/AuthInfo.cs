@@ -7,21 +7,21 @@ namespace UsersService.Entities
     public class AuthInfo
     {
         [Key]
-        [ForeignKey("User")]
-        public Guid Id { get; set; }
+        [ForeignKey("Users")]
+        public Guid id { get; set; }
 
         [Required]
         [MaxLength(30)]
         public string login { get; set; }
 
         [Required]
-        public byte[] PasswordHash { get; set; }
+        public byte[] password_hash { get; set; }
 
         [Required]
-        public byte[] PasswordSalt { get; set; }
+        public byte[] password_salt { get; set; }
 
-        public Guid JwtId { get; set; }
+        public Guid jwt_id { get; set; }
 
-        public virtual User User { get; set; }
+        public virtual User Users { get; set; }
     }
 }

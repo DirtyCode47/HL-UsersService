@@ -6,13 +6,13 @@ using User = UsersService.Entities.User;
 using UsersService.Cache;
 using static Grpc.Core.Metadata;
 using Microsoft.Extensions.Hosting;
-using UsersService.Entities;
 using System.Security.Principal;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Google.Protobuf.Collections;
+using UsersService.Entities;
 
 
 namespace UsersService.Services
@@ -20,57 +20,70 @@ namespace UsersService.Services
     public class UsersServiceImplementation : Protos.UsersService.UsersServiceBase
     {
         private readonly UsersRepository _usersRepository;
+        private readonly AuthRepository _authRepository;
         private readonly CacheService _cacheService;
         private readonly SecurityService _securityService;
         private readonly IConfiguration _configuration;
-        public UsersServiceImplementation(UsersRepository usersRepository, CacheService cacheService, SecurityService authService, IConfiguration configuration)
+        public UsersServiceImplementation(UsersRepository usersRepository, CacheService cacheService, SecurityService securityService, IConfiguration configuration,AuthRepository authRepository)
         {
+            _authRepository = authRepository ?? throw new ArgumentNullException(nameof(authRepository));
             _usersRepository = usersRepository ?? throw new ArgumentNullException(nameof(usersRepository));
             _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-            _securityService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _securityService = securityService ?? throw new ArgumentNullException(nameof(securityService));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-        //public override async Task<CreateUserResponse> CreateUser(CreateUserRequest request, ServerCallContext context)
-        //{
-        //    //Guid user_id = Guid.Parse(request.User.Id);
-        //    Guid user_id = Guid.NewGuid();
+        public override async Task<CreateUserResponse> CreateUser(CreateUserRequest request, ServerCallContext context)
+        {
+            //Guid user_id = Guid.Parse(request.User.Id);
+            Guid user_id = Guid.NewGuid();
 
-        //    if (await _usersRepository.GetUserAsync(user_id) != null)
-        //        throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this id already exists"));
+            if (await _usersRepository.GetAsync(user_id) != null)
+                throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this id already exists"));
 
-        //    if(await _usersRepository.FindByPostCode(request.User.PostCode) != null)
-        //        throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
+            if (await _usersRepository.FindByPostCode(request.User.PostCode) != null)
+                throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
 
-        //    byte[] password_salt = _securityService.GenerateRandomSalt(16);
-        //    byte[] password_hash = _securityService.CreatePasswordHash(request.User.Password, password_salt);
+            var user = new User()
+            {
+                id = user_id,
+                role = request.User.Role,
+                post_code = request.User.PostCode,
+                first_name = request.User.FirstName,
+                middle_name = request.User.MiddleName,
+                last_name = request.User.LastName,
+                phone = request.User.Phone,
+            };
 
-        //    User user = new User()
-        //    {
-        //        id = user_id,
-        //        role = request.User.Role,
-        //        post_code = request.User.PostCode,
-        //        first_name = request.User.FirstName,
-        //        middle_name = request.User.MiddleName,
-        //        last_name = request.User.LastName,
-        //        phone = request.User.Phone,
-        //        login = request.User.Login,
-        //        PasswordHash = password_hash,
-        //        PasswordSalt = password_salt,
-        //        JwtId = Guid.NewGuid()
-        //    };
+            User added_user = await _usersRepository.CreateAsync(user);
 
-        //    User added_user = await _usersRepository.CreateUserAsync(user);
-        //    await _usersRepository.CompleteAsync();
 
-        //    // Обновляем кэш
-        //    _cacheService.AddOrUpdateCache($"user:{added_user.id}", added_user);
+            byte[] password_salt = _securityService.GenerateRandomSalt(16);
+            byte[] password_hash = _securityService.CreatePasswordHash(request.User.Password, password_salt);
 
-        //    return new CreateUserResponse
-        //    {
-        //        User = request.User
-        //    };
-        //}
+            var auth_info = new AuthInfo()
+            {
+                id = user_id,
+                login = request.User.Login,
+                password_hash = password_hash,
+                password_salt = password_salt,
+                jwt_id = Guid.NewGuid()
+            };
+
+            AuthInfo added_auth_info = await _authRepository.CreateAsync(auth_info);
+            
+            await _usersRepository.CompleteAsync();
+            
+           
+            // Обновляем кэш
+            _cacheService.AddOrUpdateCache($"user:{added_user.id}", added_user);
+            _cacheService.AddOrUpdateCache($"auth:{added_auth_info.id}", added_auth_info);
+
+            return new CreateUserResponse
+            {
+                User = request.User
+            };
+        }
 
         //public override async Task<DeleteUserResponse> DeleteUser(DeleteUserRequest request, ServerCallContext context)
         //{
@@ -172,7 +185,7 @@ namespace UsersService.Services
             if (user == null)
             {
                 // Если записи нет в кэше, пытаемся получить из базы данных
-                user = await _usersRepository.GetUserAsync(guid);
+                user = await _usersRepository.GetAsync(guid);
 
                 if (user == null)
                     throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
@@ -204,7 +217,7 @@ namespace UsersService.Services
 
             if (Users == null)
             {
-                Users = _usersRepository.GetAllUsers().ToList(); //Надо не забыть добавить в кэш
+                Users = _usersRepository.GetAll().ToList(); //Надо не забыть добавить в кэш
             }
 
 

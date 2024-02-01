@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UsersService.Migrations
 {
     /// <inheritdoc />
-    public partial class SeparatingTables : Migration
+    public partial class AddTables : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -32,18 +32,18 @@ namespace UsersService.Migrations
                 name: "AuthInfo",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
                     login = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
-                    PasswordHash = table.Column<byte[]>(type: "bytea", nullable: false),
-                    PasswordSalt = table.Column<byte[]>(type: "bytea", nullable: false),
-                    JwtId = table.Column<Guid>(type: "uuid", nullable: false)
+                    password_hash = table.Column<byte[]>(type: "bytea", nullable: false),
+                    password_salt = table.Column<byte[]>(type: "bytea", nullable: false),
+                    jwt_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AuthInfo", x => x.Id);
+                    table.PrimaryKey("PK_AuthInfo", x => x.id);
                     table.ForeignKey(
-                        name: "FK_AuthInfo_Users_Id",
-                        column: x => x.Id,
+                        name: "FK_AuthInfo_Users_id",
+                        column: x => x.id,
                         principalTable: "Users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);

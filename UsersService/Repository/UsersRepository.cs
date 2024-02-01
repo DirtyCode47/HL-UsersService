@@ -5,45 +5,45 @@ using static Google.Protobuf.Reflection.UninterpretedOption.Types;
 
 namespace UsersService.Repository
 {
-    public class UsersRepository : IUsersRepository
+    public class UsersRepository : Repository<User>
     {
-        private UsersDbContext dbContext { get; set; }
+        private UserAuthDbContext dbContext { get; set; }
 
-        public UsersRepository(UsersDbContext _dbContext) 
+        public UsersRepository(UserAuthDbContext _dbContext):base(_dbContext) 
         { 
-            dbContext = _dbContext;
+            
         }
 
-        public User CreateUser(User user)
-        {
-            return dbContext.Users.Add(user).Entity;
-        }
+        //public User CreateUser(User user)
+        //{
+        //    return dbContext.Users.Add(user).Entity;
+        //}
 
-        public async Task<User> CreateUserAsync(User user)
-        {
-            var added_user = await dbContext.Users.AddAsync(user);
-            return added_user.Entity;
-        }
+        //public async Task<User> CreateUserAsync(User user)
+        //{
+        //    var added_user = await dbContext.Users.AddAsync(user);
+        //    return added_user.Entity;
+        //}
 
-        public User DeleteUser(Guid id)
-        {
-            return dbContext.Users.Remove(GetUser(id)).Entity;
-        }
+        //public User DeleteUser(Guid id)
+        //{
+        //    return dbContext.Users.Remove(GetUser(id)).Entity;
+        //}
 
-        public User UpdateUser(User user)
-        {
-            return dbContext.Users.Update(user).Entity;
-        }
+        //public User UpdateUser(User user)
+        //{
+        //    return dbContext.Users.Update(user).Entity;
+        //}
 
-        public User GetUser(Guid id)
-        {
-            return dbContext.Users.Find(id);
-        }
+        //public User GetUser(Guid id)
+        //{
+        //    return dbContext.Users.Find(id);
+        //}
 
-        public async Task<User> GetUserAsync(Guid id)
-        {
-            return await dbContext.Users.FindAsync(id);
-        }
+        //public async Task<User> GetUserAsync(Guid id)
+        //{
+        //    return await dbContext.Users.FindAsync(id);
+        //}
 
         //public User GetUserByLogin(string login)
         //{
@@ -62,20 +62,28 @@ namespace UsersService.Repository
             return dbContext.Users;
         }
 
-        public async Task<User?> FindByPostCode(string post_code)
+        public async Task<User> FindByPostCode(string post_code)
         {
-            return await dbContext.Users.FirstOrDefaultAsync(p => p.post_code == post_code);
+            //// Проверка на null для безопасности
+            //if (dbContext != null && dbContext.Users != null)
+            //{
+            //    return dbContext.Users.FirstOrDefault(u => u.post_code == post_code);
+            //}
+
+            //// Обработка случая, когда _dbContext или _dbContext.Users равны null
+            //return null;
+            return dbContext?.Users?.FirstOrDefault(u => u.post_code == post_code);
         }
 
-        public void Complete()
-        {
-            dbContext.SaveChanges();
-        }
+        //public void Complete()
+        //{
+        //    dbContext.SaveChanges();
+        //}
 
-        public async Task<int> CompleteAsync()
-        {
-            return await dbContext.SaveChangesAsync();
-        }
+        //public async Task<int> CompleteAsync()
+        //{
+        //    return await dbContext.SaveChangesAsync();
+        //}
 
         private bool isNeededUser(User user, string[] nameParts, string role, string post_code)
         {

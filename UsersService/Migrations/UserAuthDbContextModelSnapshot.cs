@@ -10,8 +10,8 @@ using UsersService.Repository;
 
 namespace UsersService.Migrations
 {
-    [DbContext(typeof(UsersDbContext))]
-    partial class UsersDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(UserAuthDbContext))]
+    partial class UserAuthDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -24,26 +24,26 @@ namespace UsersService.Migrations
 
             modelBuilder.Entity("UsersService.Entities.AuthInfo", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("id")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("JwtId")
+                    b.Property<Guid>("jwt_id")
                         .HasColumnType("uuid");
-
-                    b.Property<byte[]>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
-                    b.Property<byte[]>("PasswordSalt")
-                        .IsRequired()
-                        .HasColumnType("bytea");
 
                     b.Property<string>("login")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.HasKey("Id");
+                    b.Property<byte[]>("password_hash")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<byte[]>("password_salt")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.HasKey("id");
 
                     b.ToTable("AuthInfo");
                 });
@@ -91,13 +91,13 @@ namespace UsersService.Migrations
 
             modelBuilder.Entity("UsersService.Entities.AuthInfo", b =>
                 {
-                    b.HasOne("UsersService.Entities.User", "User")
+                    b.HasOne("UsersService.Entities.User", "Users")
                         .WithMany()
-                        .HasForeignKey("Id")
+                        .HasForeignKey("id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }
