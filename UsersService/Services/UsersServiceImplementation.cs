@@ -41,8 +41,8 @@ namespace UsersService.Services
             if (await _usersRepository.GetAsync(user_id) != null)
                 throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this id already exists"));
 
-            if (await _usersRepository.FindByPostCode(request.User.PostCode) != null)
-                throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
+            //if (await _usersRepository.FindByPostCode(request.User.PostCode) != null)
+            //    throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
 
             var user = new User()
             {
@@ -85,94 +85,101 @@ namespace UsersService.Services
             };
         }
 
-        //public override async Task<DeleteUserResponse> DeleteUser(DeleteUserRequest request, ServerCallContext context)
-        //{
+        public override async Task<DeleteUserResponse> DeleteUser(DeleteUserRequest request, ServerCallContext context)
+        {
 
-        //    if (!Guid.TryParse(request.Id, out Guid user_id))
-        //    {
-        //        throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
-        //    }
+            if (!Guid.TryParse(request.Id, out Guid user_id))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
+            }
 
-        //    User user = await _usersRepository.GetUserAsync(user_id);
-        //    if (user == null)
-        //        throw new RpcException(new Status(StatusCode.NotFound, "Can't find record in Db with this id"));
+            User user = await _usersRepository.GetAsync(user_id);
+            if (user == null)
+            {
+                throw new RpcException(new Status(StatusCode.NotFound, "Can't find record in Db with this id"));
+            }
+                
+            _usersRepository.Delete(user_id);
+            _authRepository.Delete(user_id);
 
-        //    _usersRepository.DeleteUser(user_id);
-        //    await _usersRepository.CompleteAsync();
+            await _usersRepository.CompleteAsync();
+            // Удаляем из кэша
+            _cacheService.ClearCache($"user:{user.id}");
+            _cacheService.ClearCache($"auth:{user.id}");
 
-        //    // Удаляем из кэша
-        //    _cacheService.ClearCache($"user:{user.id}");
+            return new DeleteUserResponse
+            {
+                User = new Protos.UserDTO
+                {
+                    Id = user.id.ToString(),
+                    Role = user.role,
+                    PostCode = user.post_code,
+                    FirstName = user.first_name,
+                    MiddleName = user.middle_name,
+                    LastName = user.last_name,
+                    Phone = user.phone
+                }
+            };
+        }
 
-        //    return new DeleteUserResponse
-        //    {
-        //        User = new Protos.UserDTO
-        //        {
-        //            Id = user.id.ToString(),
-        //            Role = user.role,
-        //            PostCode = user.post_code,
-        //            FirstName = user.first_name,
-        //            MiddleName = user.middle_name,
-        //            LastName = user.last_name,
-        //            Phone = user.phone,
-        //            Login = user.login,
-        //        }
-        //    };
-        //}
+        public override async Task<UpdateUserResponse> UpdateUser(UpdateUserRequest request, ServerCallContext context)
+        {
+            if (!Guid.TryParse(request.User.Id, out Guid user_id))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
+            }
 
-        //public override async Task<UpdateUserResponse> UpdateUser(UpdateUserRequest request, ServerCallContext context)
-        //{
-        //    if (!Guid.TryParse(request.User.Id, out Guid user_id))
-        //    {
-        //        throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
-        //    }
+            var existingUser = await _usersRepository.GetAsync(user_id);
 
-        //    var existingUser = await _usersRepository.GetUserAsync(user_id);
+            if (existingUser == null)
+            {
+                throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
+            }
 
-        //    if (existingUser == null)
-        //    {
-        //        throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
-        //    }
+            //if (await _usersRepository.FindByPostCode(request.User.PostCode) != null)
+            //{
+            //    throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
+            //}
 
-        //    if (await _usersRepository.FindByPostCode(request.User.PostCode) != null)
-        //    {
-        //        throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
-        //    }
+            byte[] password_salt = _securityService.GenerateRandomSalt(16);
+            byte[] password_hash = _securityService.CreatePasswordHash(request.User.Password, password_salt);
 
-        //    byte[] password_salt = _securityService.GenerateRandomSalt(16);
-        //    byte[] password_hash = _securityService.CreatePasswordHash(request.User.Password, password_salt);
+            existingUser.role = request.User.Role;
+            existingUser.post_code = request.User.PostCode;
+            existingUser.first_name = request.User.FirstName;
+            existingUser.middle_name = request.User.MiddleName;
+            existingUser.last_name = request.User.LastName;
+            existingUser.phone = request.User.Phone;
 
-        //    existingUser.role = request.User.Role;
-        //    existingUser.post_code = request.User.PostCode;
-        //    existingUser.first_name = request.User.FirstName;
-        //    existingUser.middle_name = request.User.MiddleName;
-        //    existingUser.last_name = request.User.LastName;
-        //    existingUser.phone = request.User.Phone;
-        //    existingUser.PasswordHash = password_hash;
-        //    existingUser.PasswordSalt = password_salt;
 
-        //    var entry = _usersRepository.UpdateUser(existingUser);
-        //    if (entry == null) 
-        //        throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find record in Db with this id"));
+            var userAuthInfo = await _authRepository.GetAsync(user_id);
+            userAuthInfo.login = request.User.Login;
+            userAuthInfo.password_hash = password_hash;
+            userAuthInfo.password_salt = password_salt;
 
-        //    await _usersRepository.CompleteAsync();
+            var entry = _usersRepository.Update(existingUser);
+            if (entry == null)
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find record in Db with this id"));
 
-        //    // Обновить кэш
-        //    _cacheService.AddOrUpdateCache($"user:{entry.id}", entry);
+            await _usersRepository.CompleteAsync();
 
-        //    return new UpdateUserResponse
-        //    {
-        //        User = new Protos.UserDTO
-        //        {
-        //            Id = existingUser.id.ToString(),
-        //            Role = existingUser.role,
-        //            PostCode = existingUser.post_code,
-        //            FirstName = existingUser.first_name,
-        //            MiddleName = existingUser.middle_name,
-        //            LastName = existingUser.last_name,
-        //            Phone = existingUser.phone
-        //        }
-        //    };
-        //}
+            // Обновить кэш
+            _cacheService.AddOrUpdateCache($"user:{entry.id}", entry);
+
+            return new UpdateUserResponse
+            {
+                User = new Protos.UserDTO
+                {
+                    Id = existingUser.id.ToString(),
+                    Role = existingUser.role,
+                    PostCode = existingUser.post_code,
+                    FirstName = existingUser.first_name,
+                    MiddleName = existingUser.middle_name,
+                    LastName = existingUser.last_name,
+                    Phone = existingUser.phone
+                }
+            };
+        }
 
         public override async Task<GetUserResponse> GetUser(GetUserRequest request, ServerCallContext context)
         {
