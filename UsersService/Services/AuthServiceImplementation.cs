@@ -10,44 +10,52 @@ using UsersService.Entities;
 using Newtonsoft.Json;
 using StackExchange.Redis;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Runtime.CompilerServices;
 
 namespace UsersService.Services
 {
     public class AuthServiceImplementation:Protos.AuthService.AuthServiceBase
     {
+        private readonly AuthRepository _authRepository;
         private readonly UsersRepository _usersRepository;
         private readonly CacheService _cacheService;
         private readonly SecurityService _securityService;
         private readonly IConfiguration _configuration;
-        public AuthServiceImplementation(UsersRepository usersRepository, CacheService cacheService, SecurityService authService, IConfiguration configuration)
+        public AuthServiceImplementation(UsersRepository usersRepository, CacheService cacheService, SecurityService authService, IConfiguration configuration, AuthRepository authRepository)
         {
             _usersRepository = usersRepository ?? throw new ArgumentNullException(nameof(usersRepository));
             _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
             _securityService = authService ?? throw new ArgumentNullException(nameof(authService));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _authRepository = authRepository ?? throw new ArgumentNullException(nameof(authRepository));
         }
-        public override Task<LoginUserResponse> LoginUser(LoginUserRequest request, ServerCallContext context)
+        public override async Task<LoginUserResponse> LoginUser(LoginUserRequest request, ServerCallContext context)
         {
-            //User? user = _usersRepository.GetUserByLogin(request.Login);
+            AuthInfo? authInfo = _authRepository.GetAuthInfoByLogin(request.Login);
+            
+            //AuthInfo? authInfo = await _authRepository.GetAuthInfoByLogin(request.Login);
+            
 
-            //if (user is null)
-            //{
-            //    throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find user with such login!"));
-            //}
+            if (authInfo is null)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find user with such login!"));
+            }
 
-            //if (!_securityService.VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
-            //{
-            //    throw new RpcException(new Status(StatusCode.InvalidArgument, "Password is not correct!"));
-            //}
+            if (!_securityService.VerifyHash(request.Password, authInfo.passwordHash, authInfo.passwordSalt))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Password is not correct!"));
+            }
 
-            //string access_token = _securityService.CreateToken(user);
-            //string refresh_token = _securityService.GenerateRefreshToken().ToJson();
+            User? user = _usersRepository.Get(authInfo.id);
+            //User? user = await _usersRepository.GetAsync(authInfo.id);
 
-            //return Task.FromResult(new LoginUserResponse() { AccessToken = access_token, RefreshToken = refresh_token });
+            string access_token = _securityService.CreateToken(user, authInfo);
+            string refresh_token = _securityService.GenerateRefreshToken();
+
+            return new LoginUserResponse() { AccessToken = access_token, RefreshToken = refresh_token };
 
 
-            return null;
+            //return null;
         }
 
         public override Task<ValidateAccessTokenResponse> ValidateAccessToken(ValidateAccessTokenRequest request, ServerCallContext context)
@@ -151,29 +159,26 @@ namespace UsersService.Services
             return Task.FromResult(response);
         }
 
-        public override Task<RegenerateTokensResponse> RegenerateTokens(RegenerateTokensRequest request, ServerCallContext context)
+        public override async Task<RegenerateTokensResponse> RegenerateTokens(RegenerateTokensRequest request, ServerCallContext context)
         {
-            //string jwtToken = request.OldAccessToken; 
+            string jwtToken = request.OldAccessToken;
+            
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
 
-            //var handler = new JwtSecurityTokenHandler();
-            //var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
+            var old_jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "jwtId").Value;
+            _cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id}", old_jwt_id); //Добавляем в черный лист
+            
+            User? user = await _usersRepository.GetAsync(Guid.Parse(request.UserId));
+            AuthInfo? authInfo = await _authRepository.GetAsync(Guid.Parse(request.UserId));
 
-            //var old_jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "JwtId");
+            authInfo.jwtId = Guid.NewGuid();
+            string access_token = _securityService.CreateToken(user,authInfo);
+            string refresh_token = _securityService.GenerateRefreshToken();
 
-            //_cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id.ToString()}", old_jwt_id.ToString()); //Добавляем в черный лист
+            return new RegenerateTokensResponse() { AccessToken = access_token, RefreshToken = refresh_token };
 
-            //User user = _usersRepository.GetUser(Guid.Parse(request.UserId));
-
-            //user.JwtId = Guid.NewGuid();
-            //string access_token = _securityService.CreateToken(user);
-            //string refresh_token = _securityService.GenerateRefreshToken().ToJson();
-
-            //return Task.FromResult(new RegenerateTokensResponse() { AccessToken = access_token, RefreshToken = refresh_token });
-
-
-
-
-            return null;
+            //return null;
         }
 
         //public override Task<LogoutUserResponse> LogoutUser(LogoutUserRequest request, ServerCallContext context)

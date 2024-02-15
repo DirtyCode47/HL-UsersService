@@ -72,7 +72,7 @@ namespace UsersService.Repository
 
             //// Обработка случая, когда _dbContext или _dbContext.Users равны null
             //return null;
-            return dbContext?.Users?.FirstOrDefault(u => u.post_code == post_code);
+            return await dbContext?.Users?.FirstOrDefaultAsync(u => u.postCode == post_code);
         }
 
         //public void Complete()
@@ -120,9 +120,9 @@ namespace UsersService.Repository
 
                 foreach (var part in nameParts)
                 {
-                    if (user.first_name.Contains(part) ||
-                        user.middle_name.Contains(part) ||
-                        user.last_name.Contains(part))
+                    if (user.firstName.Contains(part) ||
+                        user.middleName.Contains(part) ||
+                        user.lastName.Contains(part))
                     {
                         coincidenceCount++;
                     }
@@ -141,7 +141,7 @@ namespace UsersService.Repository
             }
             if (!skipPostCode)
             {
-                if (user.post_code == post_code)
+                if (user.postCode == post_code)
                     coincidence.Add(true);
                 else return false;
             }

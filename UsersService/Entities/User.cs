@@ -15,19 +15,19 @@ namespace UsersService.Entities
 
         [Required]
         [MaxLength(5)]
-        public string post_code { get; set; }
+        public string postCode { get; set; }
 
         [Required]
         [MaxLength(255)]
-        public string first_name { get; set; } 
+        public string firstName { get; set; } 
 
         [Required]
         [MaxLength(255)]
-        public string middle_name { get; set; }
+        public string middleName { get; set; }
 
         [Required]
         [MaxLength(255)]
-        public string last_name { get; set; }
+        public string lastName { get; set; }
 
         [Required]
         [MaxLength(15)]

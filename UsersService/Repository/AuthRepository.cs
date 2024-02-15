@@ -11,6 +11,15 @@ namespace UsersService.Repository
         {
             
         }
+        //public async Task<AuthInfo?> GetAuthInfoByLogin(string login)
+        //{
+        //    var result = await dbContext?.AuthInfo?.FirstOrDefaultAsync(u => u.login == login);
+        //    return result ?? null;
+        //}
 
+        public AuthInfo? GetAuthInfoByLogin(string login)
+        {
+            return dbContext?.AuthInfo?.FirstOrDefault(u => u.login == login);
+        }
     }
 }

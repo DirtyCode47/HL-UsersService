@@ -15,12 +15,16 @@ namespace UsersService.Entities
         public string login { get; set; }
 
         [Required]
-        public byte[] password_hash { get; set; }
+        public byte[] passwordHash { get; set; }
 
         [Required]
-        public byte[] password_salt { get; set; }
+        public byte[] passwordSalt { get; set; }
 
-        public Guid jwt_id { get; set; }
+        public Guid jwtId { get; set; }
+        public byte[] refreshTokenHash { get; set; }
+        public byte[] refreshTokenSalt { get; set; }
+
+        public DateTime? refreshTokenExpiry { get; set; }
 
         public virtual User Users { get; set; }
     }

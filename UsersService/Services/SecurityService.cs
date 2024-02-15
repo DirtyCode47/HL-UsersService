@@ -39,7 +39,7 @@ namespace UsersService.Services
             _configuration = configuration;
         }
 
-        public byte[] CreatePasswordHash(string password, byte[] salt)
+        public byte[] CreateHash(string password, byte[] salt)
         {
             byte[] hash = null;
             using (var hmac = new HMACSHA512(salt))
@@ -49,7 +49,7 @@ namespace UsersService.Services
             return hash;
         }
 
-        public byte[] GenerateRandomSalt(int length)
+        public byte[] GenerateSalt(int length)
         {
             // Используем статический метод RandomNumberGenerator.GetBytes для генерации случайной соли
             byte[] salt = new byte[length];
@@ -59,7 +59,7 @@ namespace UsersService.Services
             }
             return salt;
         }
-        public bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
+        public bool VerifyHash(string password, byte[] passwordHash, byte[] passwordSalt)
         {
             using (var hmac = new HMACSHA512(passwordSalt))
             {
@@ -68,30 +68,49 @@ namespace UsersService.Services
             }
         }
 
-        //public string CreateToken(User user)
+        public string CreateToken(User user,AuthInfo authInfo)
+        {
+            List<Claim> claims = new List<Claim>
+            {
+                new Claim("jwtId", authInfo.jwtId.ToString()),
+                new Claim(ClaimTypes.Name, authInfo.login),
+                new Claim(ClaimTypes.Role, Convert.ToString(user.role)),
+            };
+            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
+                _configuration.GetSection("AppSettings:Token").Value));
+
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+
+            var token = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(30),
+                signingCredentials: creds);
+
+            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return jwt;
+        }
+
+        //public RefreshToken GenerateRefreshToken()
         //{
-        //    List<Claim> claims = new List<Claim>
+        //    var refreshTokenSize = 64; // Размер RefreshToken (в байтах)
+        //    var refreshTokenBytes = new byte[refreshTokenSize];
+
+        //    using (var rng = RandomNumberGenerator.Create())
         //    {
-        //        new Claim("JwtId", user.JwtId.ToString()),
-        //        new Claim(ClaimTypes.Name, user.login),
-        //        new Claim(ClaimTypes.Role, Convert.ToString(user.role)),
+        //        rng.GetBytes(refreshTokenBytes);
+        //    }
+
+        //    var refreshTokenData = new RefreshToken
+        //    {
+        //        Token = Convert.ToBase64String(refreshTokenBytes),
+        //        Created = DateTime.UtcNow,
+        //        Expires = DateTime.UtcNow.AddDays(7) 
         //    };
-        //    var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-        //        _configuration.GetSection("AppSettings:Token").Value));
 
-        //    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-
-        //    var token = new JwtSecurityToken(
-        //        claims: claims,
-        //        expires: DateTime.Now.AddDays(1),
-        //        signingCredentials: creds);
-
-        //    var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-        //    return jwt;
+        //    return refreshTokenData;
         //}
-
-        public RefreshToken GenerateRefreshToken()
+        public string GenerateRefreshToken()
         {
             var refreshTokenSize = 64; // Размер RefreshToken (в байтах)
             var refreshTokenBytes = new byte[refreshTokenSize];
@@ -101,14 +120,7 @@ namespace UsersService.Services
                 rng.GetBytes(refreshTokenBytes);
             }
 
-            var refreshTokenData = new RefreshToken
-            {
-                Token = Convert.ToBase64String(refreshTokenBytes),
-                Created = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddDays(7) // Например, устанавливаем срок жизни в 7 дней
-            };
-
-            return refreshTokenData;
+            return Convert.ToBase64String(refreshTokenBytes);
         }
     }
 }

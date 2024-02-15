@@ -48,32 +48,32 @@ namespace UsersService.Services
             {
                 id = user_id,
                 role = request.User.Role,
-                post_code = request.User.PostCode,
-                first_name = request.User.FirstName,
-                middle_name = request.User.MiddleName,
-                last_name = request.User.LastName,
+                postCode = request.User.PostCode,
+                firstName = request.User.FirstName,
+                middleName = request.User.MiddleName,
+                lastName = request.User.LastName,
                 phone = request.User.Phone,
             };
 
             User added_user = await _usersRepository.CreateAsync(user);
 
 
-            byte[] password_salt = _securityService.GenerateRandomSalt(16);
-            byte[] password_hash = _securityService.CreatePasswordHash(request.User.Password, password_salt);
+            byte[] password_salt = _securityService.GenerateSalt(16);
+            byte[] password_hash = _securityService.CreateHash(request.User.Password, password_salt);
 
             var auth_info = new AuthInfo()
             {
                 id = user_id,
                 login = request.User.Login,
-                password_hash = password_hash,
-                password_salt = password_salt,
-                jwt_id = Guid.NewGuid()
+                passwordHash = password_hash,
+                passwordSalt = password_salt,
+                jwtId = Guid.NewGuid()
             };
 
             AuthInfo added_auth_info = await _authRepository.CreateAsync(auth_info);
             
             await _usersRepository.CompleteAsync();
-            
+            await _authRepository.CompleteAsync();
            
             // Обновляем кэш
             _cacheService.AddOrUpdateCache($"user:{added_user.id}", added_user);
@@ -98,9 +98,12 @@ namespace UsersService.Services
             {
                 throw new RpcException(new Status(StatusCode.NotFound, "Can't find record in Db with this id"));
             }
-                
-            _usersRepository.Delete(user_id);
-            _authRepository.Delete(user_id);
+
+            AuthInfo authInfo = await _authRepository.GetAsync(user_id);
+            _cacheService.AddOrUpdateCache($"blacklist:{authInfo.jwtId}", authInfo.jwtId); //Добавляем в черный лист
+
+            await _usersRepository.Delete(user_id);
+            
 
             await _usersRepository.CompleteAsync();
             // Удаляем из кэша
@@ -113,10 +116,10 @@ namespace UsersService.Services
                 {
                     Id = user.id.ToString(),
                     Role = user.role,
-                    PostCode = user.post_code,
-                    FirstName = user.first_name,
-                    MiddleName = user.middle_name,
-                    LastName = user.last_name,
+                    PostCode = user.postCode,
+                    FirstName = user.firstName,
+                    MiddleName = user.middleName,
+                    LastName = user.lastName,
                     Phone = user.phone
                 }
             };
@@ -141,27 +144,33 @@ namespace UsersService.Services
             //    throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
             //}
 
-            byte[] password_salt = _securityService.GenerateRandomSalt(16);
-            byte[] password_hash = _securityService.CreatePasswordHash(request.User.Password, password_salt);
+            byte[] password_salt = _securityService.GenerateSalt(16);
+            byte[] password_hash = _securityService.CreateHash(request.User.Password, password_salt);
 
             existingUser.role = request.User.Role;
-            existingUser.post_code = request.User.PostCode;
-            existingUser.first_name = request.User.FirstName;
-            existingUser.middle_name = request.User.MiddleName;
-            existingUser.last_name = request.User.LastName;
+            existingUser.postCode = request.User.PostCode;
+            existingUser.firstName = request.User.FirstName;
+            existingUser.middleName = request.User.MiddleName;
+            existingUser.lastName = request.User.LastName;
             existingUser.phone = request.User.Phone;
 
 
             var userAuthInfo = await _authRepository.GetAsync(user_id);
             userAuthInfo.login = request.User.Login;
-            userAuthInfo.password_hash = password_hash;
-            userAuthInfo.password_salt = password_salt;
+            userAuthInfo.passwordHash = password_hash;
+            userAuthInfo.passwordSalt = password_salt;
+
+            _cacheService.AddOrUpdateCache($"blacklist:{userAuthInfo.jwtId}", userAuthInfo.jwtId); //Добавляем в черный лист
+
 
             var entry = _usersRepository.Update(existingUser);
             if (entry == null)
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find record in Db with this id"));
 
+            _authRepository.Update(userAuthInfo);
+
             await _usersRepository.CompleteAsync();
+            await _authRepository.CompleteAsync();
 
             // Обновить кэш
             _cacheService.AddOrUpdateCache($"user:{entry.id}", entry);
@@ -172,10 +181,10 @@ namespace UsersService.Services
                 {
                     Id = existingUser.id.ToString(),
                     Role = existingUser.role,
-                    PostCode = existingUser.post_code,
-                    FirstName = existingUser.first_name,
-                    MiddleName = existingUser.middle_name,
-                    LastName = existingUser.last_name,
+                    PostCode = existingUser.postCode,
+                    FirstName = existingUser.firstName,
+                    MiddleName = existingUser.middleName,
+                    LastName = existingUser.lastName,
                     Phone = existingUser.phone
                 }
             };
@@ -209,10 +218,10 @@ namespace UsersService.Services
                 {
                     Id = user.id.ToString(),
                     Role = user.role,
-                    PostCode = user.post_code,
-                    FirstName = user.first_name,
-                    MiddleName = user.middle_name,
-                    LastName = user.last_name,
+                    PostCode = user.postCode,
+                    FirstName = user.firstName,
+                    MiddleName = user.middleName,
+                    LastName = user.lastName,
                     Phone = user.phone,
                 }
             };
@@ -236,11 +245,11 @@ namespace UsersService.Services
                 {
                     Id = user.id.ToString(),
                     Role = user.role,
-                    PostCode = user.post_code,
-                    FirstName = user.first_name,
-                    MiddleName = user.middle_name,
-                    LastName = user.last_name,
-                    Phone = user.phone,
+                    PostCode = user.postCode,
+                    FirstName = user.firstName,
+                    MiddleName = user.middleName,
+                    LastName = user.lastName,
+                    Phone = user.phone
                 });
             }
 
@@ -260,10 +269,10 @@ namespace UsersService.Services
                 {
                     Id = user.id.ToString(),
                     Role = user.role,
-                    PostCode = user.post_code,
-                    FirstName = user.first_name,
-                    MiddleName = user.middle_name,
-                    LastName = user.last_name,
+                    PostCode = user.postCode,
+                    FirstName = user.firstName,
+                    MiddleName = user.middleName,
+                    LastName = user.lastName,
                     Phone = user.phone,
                 });
             }

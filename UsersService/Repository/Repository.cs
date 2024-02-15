@@ -31,12 +31,12 @@ namespace UsersService.Repository
             return dbContext.Set<TEntity>().Update(entity).Entity;
         }
 
-        public TEntity Get(Guid id)
+        public TEntity? Get(Guid id)
         {
-            return dbContext.Set<TEntity>().Find(id);
+            return dbContext.Set<TEntity>().Find(id) ?? null;
         }
 
-        public async Task<TEntity> GetAsync(Guid id)
+        public async Task<TEntity?> GetAsync(Guid id)
         {
             return await dbContext.Set<TEntity>().FindAsync(id);
         }
