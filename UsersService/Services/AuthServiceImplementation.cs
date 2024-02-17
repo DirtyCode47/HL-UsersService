@@ -49,10 +49,20 @@ namespace UsersService.Services
             User? user = _usersRepository.Get(authInfo.id);
             //User? user = await _usersRepository.GetAsync(authInfo.id);
 
-            string access_token = _securityService.CreateToken(user, authInfo);
-            string refresh_token = _securityService.GenerateRefreshToken();
+            string accessToken = _securityService.CreateToken(user, authInfo);
+            string refreshToken = _securityService.GenerateRefreshToken();
 
-            return new LoginUserResponse() { AccessToken = access_token, RefreshToken = refresh_token };
+            byte[] refreshTokenSalt = _securityService.GenerateSalt(16);
+            byte[] refreshTokenHash = _securityService.CreateHash(refreshToken, refreshTokenSalt);
+
+            authInfo.refreshTokenHash = refreshTokenHash;
+            authInfo.refreshTokenSalt = refreshTokenSalt;
+            authInfo.refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+
+            _authRepository.Update(authInfo);
+            _authRepository.CompleteAsync();
+
+            return new LoginUserResponse() { AccessToken = accessToken, RefreshToken = refreshToken };
 
 
             //return null;

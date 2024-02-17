@@ -11,6 +11,10 @@ namespace UsersService.Entities
         public Guid id { get; set; }
 
         [Required]
+        [MaxLength(255)]
+        public string role { get; set; }
+
+        [Required]
         [MaxLength(30)]
         public string login { get; set; }
 

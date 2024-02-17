@@ -12,8 +12,8 @@ using UsersService.Repository;
 namespace UsersService.Migrations
 {
     [DbContext(typeof(UserAuthDbContext))]
-    [Migration("20240201075552_AddTables")]
-    partial class AddTables
+    [Migration("20240217150615_NewVariantOfAuthTable")]
+    partial class NewVariantOfAuthTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -30,7 +30,7 @@ namespace UsersService.Migrations
                     b.Property<Guid>("id")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("jwt_id")
+                    b.Property<Guid>("jwtId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("login")
@@ -38,13 +38,29 @@ namespace UsersService.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.Property<byte[]>("password_hash")
+                    b.Property<byte[]>("passwordHash")
                         .IsRequired()
                         .HasColumnType("bytea");
 
-                    b.Property<byte[]>("password_salt")
+                    b.Property<byte[]>("passwordSalt")
                         .IsRequired()
                         .HasColumnType("bytea");
+
+                    b.Property<DateTime?>("refreshTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<byte[]>("refreshTokenHash")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<byte[]>("refreshTokenSalt")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("role")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("id");
 
@@ -57,17 +73,17 @@ namespace UsersService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("first_name")
+                    b.Property<string>("firstName")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<string>("last_name")
+                    b.Property<string>("lastName")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<string>("middle_name")
+                    b.Property<string>("middleName")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -77,15 +93,10 @@ namespace UsersService.Migrations
                         .HasMaxLength(15)
                         .HasColumnType("character varying(15)");
 
-                    b.Property<string>("post_code")
+                    b.Property<string>("postCode")
                         .IsRequired()
                         .HasMaxLength(5)
                         .HasColumnType("character varying(5)");
-
-                    b.Property<string>("role")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.HasKey("id");
 

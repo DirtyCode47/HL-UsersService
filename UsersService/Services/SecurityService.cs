@@ -74,7 +74,7 @@ namespace UsersService.Services
             {
                 new Claim("jwtId", authInfo.jwtId.ToString()),
                 new Claim(ClaimTypes.Name, authInfo.login),
-                new Claim(ClaimTypes.Role, Convert.ToString(user.role)),
+                new Claim(ClaimTypes.Role, Convert.ToString(authInfo.role)),
             };
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
                 _configuration.GetSection("AppSettings:Token").Value));

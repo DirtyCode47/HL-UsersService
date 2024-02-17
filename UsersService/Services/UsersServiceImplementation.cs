@@ -13,6 +13,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Google.Protobuf.Collections;
 using UsersService.Entities;
+using StackExchange.Redis;
 
 
 namespace UsersService.Services
@@ -47,7 +48,6 @@ namespace UsersService.Services
             var user = new User()
             {
                 id = user_id,
-                role = request.User.Role,
                 postCode = request.User.PostCode,
                 firstName = request.User.FirstName,
                 middleName = request.User.MiddleName,
@@ -64,6 +64,7 @@ namespace UsersService.Services
             var auth_info = new AuthInfo()
             {
                 id = user_id,
+                role = request.User.Role,
                 login = request.User.Login,
                 passwordHash = password_hash,
                 passwordSalt = password_salt,
@@ -115,7 +116,6 @@ namespace UsersService.Services
                 User = new Protos.UserDTO
                 {
                     Id = user.id.ToString(),
-                    Role = user.role,
                     PostCode = user.postCode,
                     FirstName = user.firstName,
                     MiddleName = user.middleName,
@@ -147,7 +147,6 @@ namespace UsersService.Services
             byte[] password_salt = _securityService.GenerateSalt(16);
             byte[] password_hash = _securityService.CreateHash(request.User.Password, password_salt);
 
-            existingUser.role = request.User.Role;
             existingUser.postCode = request.User.PostCode;
             existingUser.firstName = request.User.FirstName;
             existingUser.middleName = request.User.MiddleName;
@@ -156,6 +155,7 @@ namespace UsersService.Services
 
 
             var userAuthInfo = await _authRepository.GetAsync(user_id);
+            userAuthInfo.role = request.User.Role;
             userAuthInfo.login = request.User.Login;
             userAuthInfo.passwordHash = password_hash;
             userAuthInfo.passwordSalt = password_salt;
@@ -180,7 +180,6 @@ namespace UsersService.Services
                 User = new Protos.UserDTO
                 {
                     Id = existingUser.id.ToString(),
-                    Role = existingUser.role,
                     PostCode = existingUser.postCode,
                     FirstName = existingUser.firstName,
                     MiddleName = existingUser.middleName,
@@ -217,7 +216,6 @@ namespace UsersService.Services
                 User = new Protos.UserDTO
                 {
                     Id = user.id.ToString(),
-                    Role = user.role,
                     PostCode = user.postCode,
                     FirstName = user.firstName,
                     MiddleName = user.middleName,
@@ -244,7 +242,6 @@ namespace UsersService.Services
                 response.Users.Add(new UserDTO
                 {
                     Id = user.id.ToString(),
-                    Role = user.role,
                     PostCode = user.postCode,
                     FirstName = user.firstName,
                     MiddleName = user.middleName,
@@ -256,29 +253,28 @@ namespace UsersService.Services
             return Task.FromResult(response);
         }
 
-        public override Task<FindUsersWithFiltersResponse> FindUsersWithFilters(FindUsersWithFiltersRequest request, ServerCallContext context)
-        {
-            var users = _usersRepository.FindUsersWithFilters(request.Name,request.Role,request.PostCode);
-            if (!users.Any()) throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find elements in page"));
+        //public override Task<FindUsersWithFiltersResponse> FindUsersWithFilters(FindUsersWithFiltersRequest request, ServerCallContext context)
+        //{
+        //    var users = _usersRepository.FindUsersWithFilters(request.Name,request.Role,request.PostCode);
+        //    if (!users.Any()) throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find elements in page"));
 
-            FindUsersWithFiltersResponse findWithFiltersResponse = new();
+        //    FindUsersWithFiltersResponse findWithFiltersResponse = new();
 
-            foreach (var user in users)
-            {
-                findWithFiltersResponse.Users.Add(new Protos.UserDTO
-                {
-                    Id = user.id.ToString(),
-                    Role = user.role,
-                    PostCode = user.postCode,
-                    FirstName = user.firstName,
-                    MiddleName = user.middleName,
-                    LastName = user.lastName,
-                    Phone = user.phone,
-                });
-            }
+        //    foreach (var user in users)
+        //    {
+        //        findWithFiltersResponse.Users.Add(new Protos.UserDTO
+        //        {
+        //            Id = user.id.ToString(),
+        //            PostCode = user.postCode,
+        //            FirstName = user.firstName,
+        //            MiddleName = user.middleName,
+        //            LastName = user.lastName,
+        //            Phone = user.phone,
+        //        });
+        //    }
 
-            return Task.FromResult(findWithFiltersResponse);
-        }
+        //    return Task.FromResult(findWithFiltersResponse);
+        //}
 
     }
 }

@@ -54,6 +54,11 @@ namespace UsersService.Migrations
                         .IsRequired()
                         .HasColumnType("bytea");
 
+                    b.Property<string>("role")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.HasKey("id");
 
                     b.ToTable("AuthInfo");
@@ -89,11 +94,6 @@ namespace UsersService.Migrations
                         .IsRequired()
                         .HasMaxLength(5)
                         .HasColumnType("character varying(5)");
-
-                    b.Property<string>("role")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.HasKey("id");
 

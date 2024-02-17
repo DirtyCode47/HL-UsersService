@@ -10,10 +10,6 @@ namespace UsersService.Entities
         public Guid id { get; set; } = Guid.NewGuid();
 
         [Required]
-        [MaxLength(255)]
-        public string role { get; set; }
-
-        [Required]
         [MaxLength(5)]
         public string postCode { get; set; }
 

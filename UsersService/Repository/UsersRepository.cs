@@ -51,11 +51,11 @@ namespace UsersService.Repository
         //    return user;
         //}
 
-        public IEnumerable<User> FindUsersWithFilters(string fullname, string role, string post_code)
-        {
-            var splittedFullName = fullname.Split(' ');
-            return dbContext.Users.Where(u => isNeededUser(u, splittedFullName, role, post_code));
-        }
+        //public IEnumerable<User> FindUsersWithFilters(string fullname, string role, string post_code)
+        //{
+        //    var splittedFullName = fullname.Split(' ');
+        //    return dbContext.Users.Where(u => isNeededUser(u, splittedFullName, role, post_code));
+        //}
 
         public IEnumerable<User> GetAllUsers()
         {
@@ -85,74 +85,74 @@ namespace UsersService.Repository
         //    return await dbContext.SaveChangesAsync();
         //}
 
-        private bool isNeededUser(User user, string[] nameParts, string role, string post_code)
-        {
-            bool skipName = false;
-            bool skipRole = false;
-            bool skipPostCode = false;
+        //private bool isNeededUser(User user, string[] nameParts, string role, string post_code)
+        //{
+        //    bool skipName = false;
+        //    bool skipRole = false;
+        //    bool skipPostCode = false;
 
-            int neededCoincidenceCount = 3;
-            List<bool> coincidence = new List<bool>();
+        //    int neededCoincidenceCount = 3;
+        //    List<bool> coincidence = new List<bool>();
 
-            if (nameParts.Length == 1 && nameParts[0] == "")
-            {
-                skipName = true;
-                neededCoincidenceCount--;
-            }
-            if (role == "")
-            {
-                skipRole = true;
-                neededCoincidenceCount--;
-            }
-            if (post_code == "")
-            {
-                skipPostCode = true;
-                neededCoincidenceCount--;
-            }
+        //    if (nameParts.Length == 1 && nameParts[0] == "")
+        //    {
+        //        skipName = true;
+        //        neededCoincidenceCount--;
+        //    }
+        //    if (role == "")
+        //    {
+        //        skipRole = true;
+        //        neededCoincidenceCount--;
+        //    }
+        //    if (post_code == "")
+        //    {
+        //        skipPostCode = true;
+        //        neededCoincidenceCount--;
+        //    }
 
-            if(neededCoincidenceCount == 0) { return false; }
-
-
-            if (!skipName)
-            {
-                //Кол-во совпадений
-                int coincidenceCount = 0;
-
-                foreach (var part in nameParts)
-                {
-                    if (user.firstName.Contains(part) ||
-                        user.middleName.Contains(part) ||
-                        user.lastName.Contains(part))
-                    {
-                        coincidenceCount++;
-                    }
-                }
-
-                //Если все части ФИО подошли
-                if (coincidenceCount == nameParts.Length)
-                    coincidence.Add(true);
-                else return false;
-            }
-            if (!skipRole)
-            {
-                if (user.role == role)
-                    coincidence.Add(true);
-                else return false;
-            }
-            if (!skipPostCode)
-            {
-                if (user.postCode == post_code)
-                    coincidence.Add(true);
-                else return false;
-            }
+        //    if(neededCoincidenceCount == 0) { return false; }
 
 
-            if(coincidence.Count == neededCoincidenceCount)
-            {
-                return true;
-            }
+        //    if (!skipName)
+        //    {
+        //        //Кол-во совпадений
+        //        int coincidenceCount = 0;
 
-            return false;
-        }
+        //        foreach (var part in nameParts)
+        //        {
+        //            if (user.firstName.Contains(part) ||
+        //                user.middleName.Contains(part) ||
+        //                user.lastName.Contains(part))
+        //            {
+        //                coincidenceCount++;
+        //            }
+        //        }
+
+        //        //Если все части ФИО подошли
+        //        if (coincidenceCount == nameParts.Length)
+        //            coincidence.Add(true);
+        //        else return false;
+        //    }
+        //    if (!skipRole)
+        //    {
+        //        if (user.role == role)
+        //            coincidence.Add(true);
+        //        else return false;
+        //    }
+        //    if (!skipPostCode)
+        //    {
+        //        if (user.postCode == post_code)
+        //            coincidence.Add(true);
+        //        else return false;
+        //    }
+
+
+        //    if(coincidence.Count == neededCoincidenceCount)
+        //    {
+        //        return true;
+        //    }
+
+        //    return false;
+        //}
     }
 }
