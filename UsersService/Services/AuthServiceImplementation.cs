@@ -173,9 +173,9 @@ namespace UsersService.Services
                 throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
             }
 
-            ValidateRefreshTokenResponse response = (authInfo.refreshTokenExpiry < DateTime.UtcNow && !_securityService.VerifyHash(request.RefreshToken,authInfo.refreshTokenHash,authInfo.refreshTokenSalt)) ?
-                new ValidateRefreshTokenResponse() { Success = false } :
-                new ValidateRefreshTokenResponse() { Success = true };
+            ValidateRefreshTokenResponse response = (authInfo.refreshTokenExpiry > DateTime.UtcNow && _securityService.VerifyHash(request.RefreshToken,authInfo.refreshTokenHash,authInfo.refreshTokenSalt)) ?
+                new ValidateRefreshTokenResponse() { Success = true } :
+                new ValidateRefreshTokenResponse() { Success = false };
 
             return response;
         }
