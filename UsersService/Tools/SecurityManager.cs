@@ -16,7 +16,6 @@ namespace UsersService.Tools
 
         public byte[] GenerateSalt(int length)
         {
-            // Используем статический метод RandomNumberGenerator.GetBytes для генерации случайной соли
             byte[] salt = new byte[length];
             using (var rng = RandomNumberGenerator.Create())
             {

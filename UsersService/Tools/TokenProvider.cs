@@ -39,7 +39,7 @@ namespace UsersService.Tools
 
         public string GenerateRefreshToken()
         {
-            var refreshTokenSize = 64; // Размер RefreshToken (в байтах)
+            var refreshTokenSize = 64; 
             var refreshTokenBytes = new byte[refreshTokenSize];
 
             using (var rng = RandomNumberGenerator.Create())

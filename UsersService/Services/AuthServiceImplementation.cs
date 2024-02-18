@@ -37,9 +37,6 @@ namespace UsersService.Services
         {
             AuthInfo? authInfo = _authRepository.GetAuthInfoByLogin(request.Login);
             
-            //AuthInfo? authInfo = await _authRepository.GetAuthInfoByLogin(request.Login);
-            
-
             if (authInfo is null)
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find user with such login!"));
@@ -69,8 +66,6 @@ namespace UsersService.Services
 
             return new LoginUserResponse() { AccessToken = accessToken, RefreshToken = refreshToken };
 
-
-            //return null;
         }
 
         public override Task<ValidateAccessTokenResponse> ValidateAccessToken(ValidateAccessTokenRequest request, ServerCallContext context)
@@ -91,7 +86,7 @@ namespace UsersService.Services
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateIssuer = false,
                     ValidateAudience = false,
-                    ValidateLifetime = false, // Отключаем проверку времени жизни
+                    ValidateLifetime = false, 
                     ClockSkew = TimeSpan.Zero
                 };
 
@@ -99,7 +94,7 @@ namespace UsersService.Services
                 var principal = tokenHandler.ValidateToken(request.AccessToken, tokenValidationParameters, out validatedToken);
 
 
-                var handler = new JwtSecurityTokenHandler();  //Проверка на то, есть ли токен в блэклисте
+                var handler = new JwtSecurityTokenHandler();  
                 var jsonToken = handler.ReadToken(request.AccessToken) as JwtSecurityToken;
 
                 var jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "jwtId").Value;
@@ -110,12 +105,10 @@ namespace UsersService.Services
                     return Task.FromResult(new ValidateAccessTokenResponse() { Success = false });
                 }
 
-                // Если успешно прошли основную проверку, валидация считается успешной
                 return Task.FromResult(new ValidateAccessTokenResponse() { Success = true });
             }
             catch (Exception ex)
             {
-                // В случае ошибки валидации, возвращаем false
                 return Task.FromResult(new ValidateAccessTokenResponse() { Success = false });
             }
         }
@@ -140,24 +133,21 @@ namespace UsersService.Services
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateIssuer = false,
                     ValidateAudience = false,
-                    ValidateLifetime = true, // Включаем проверку времени жизни
-                    ClockSkew = TimeSpan.Zero // Устанавливаем отсутствие дополнительного времени (ClockSkew) для точной проверки
+                    ValidateLifetime = true, 
+                    ClockSkew = TimeSpan.Zero 
                 };
 
                 SecurityToken validatedToken;
                 var principal = tokenHandler.ValidateToken(request.AccessToken, tokenValidationParameters, out validatedToken);
 
-                // Если успешно прошли валидацию времени жизни, валидация считается успешной
                 return Task.FromResult(new ValidateAccessTokenLifetimeResponse() { Success = true });
             }
             catch (SecurityTokenExpiredException)
             {
-                // Токен истек и срок его действия завершен
                 return Task.FromResult(new ValidateAccessTokenLifetimeResponse() { Success = false });
             }
             catch (Exception)
             {
-                // В случае других ошибок валидации, считаем токен невалидным
                 return Task.FromResult(new ValidateAccessTokenLifetimeResponse() { Success = false });
             }
         }
@@ -192,7 +182,7 @@ namespace UsersService.Services
             var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
 
             var old_jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "jwtId").Value;
-            _cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id}", old_jwt_id); //Добавляем в черный лист
+            _cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id}", old_jwt_id); 
             
             User? user = await _usersRepository.GetAsync(Guid.Parse(request.UserId));
             AuthInfo? authInfo = await _authRepository.GetAsync(Guid.Parse(request.UserId));
@@ -235,7 +225,7 @@ namespace UsersService.Services
             var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
 
             var old_jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "jwtId").Value;
-            _cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id}", old_jwt_id); //Добавляем в черный лист
+            _cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id}", old_jwt_id); 
 
             authInfo.refreshTokenHash = null;
             authInfo.refreshTokenSalt = null;

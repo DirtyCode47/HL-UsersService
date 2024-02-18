@@ -40,14 +40,11 @@ namespace UsersService.Services
 
         public override async Task<CreateUserResponse> CreateUser(CreateUserRequest request, ServerCallContext context)
         {
-            //Guid user_id = Guid.Parse(request.User.Id);
             Guid user_id = Guid.NewGuid();
 
             if (await _usersRepository.GetAsync(user_id) != null)
                 throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this id already exists"));
 
-            //if (await _usersRepository.FindByPostCode(request.User.PostCode) != null)
-            //    throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
 
             var user = new User()
             {
@@ -101,11 +98,10 @@ namespace UsersService.Services
             }
 
             AuthInfo authInfo = await _authRepository.GetAsync(user_id);
-            _cacheService.AddOrUpdateCache($"blacklist:{authInfo.jwtId}", authInfo.jwtId); //Добавляем в черный лист
+            _cacheService.AddOrUpdateCache($"blacklist:{authInfo.jwtId}", authInfo.jwtId); 
 
             await _usersRepository.Delete(user_id);
             await _usersRepository.CompleteAsync();
-            // Удаляем из кэша
 
             return new DeleteUserResponse
             {
@@ -135,10 +131,6 @@ namespace UsersService.Services
                 throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
             }
 
-            //if (await _usersRepository.FindByPostCode(request.User.PostCode) != null)
-            //{
-            //    throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
-            //}
 
             byte[] password_salt = _securityManager.GenerateSalt(16);
             byte[] password_hash = _securityManager.CreateHash(request.User.Password, password_salt);
@@ -156,7 +148,7 @@ namespace UsersService.Services
             userAuthInfo.passwordHash = password_hash;
             userAuthInfo.passwordSalt = password_salt;
 
-            _cacheService.AddOrUpdateCache($"blacklist:{userAuthInfo.jwtId}", userAuthInfo.jwtId); //Добавляем в черный лист
+            _cacheService.AddOrUpdateCache($"blacklist:{userAuthInfo.jwtId}", userAuthInfo.jwtId); 
 
 
             var entry = _usersRepository.Update(existingUser);
@@ -211,7 +203,7 @@ namespace UsersService.Services
 
         public override async Task<GetAllUsersResponse> GetAllUsers(GetAllUsersRequest request, ServerCallContext context)
         {
-            var users = await _usersRepository.GetAllUsersAsync(); //Надо не забыть добавить в кэш
+            var users = await _usersRepository.GetAllUsersAsync(); 
             
             var response = new GetAllUsersResponse();
 
