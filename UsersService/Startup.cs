@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 using UsersService.Protos;
 using UsersService.Entities;
 using UsersService.Tools;
+using UsersService.Repository.Auth;
+using UsersService.Repository.Users;
 
 namespace UsersService
 {
@@ -30,8 +32,8 @@ namespace UsersService
             services.AddDbContext<UserAuthDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
 
-            services.AddScoped<UsersRepository>();
-            services.AddScoped<AuthRepository>();
+            services.AddScoped<IUsersRepository,UsersRepository>();
+            services.AddScoped<IAuthRepository, AuthRepository>();
             services.AddScoped<UsersServiceImplementation>();
             services.AddScoped<AuthServiceImplementation>();
             services.AddScoped<ICacheService,CacheService>();

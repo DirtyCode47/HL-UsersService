@@ -1,6 +1,5 @@
 ﻿
 using Grpc.Core;
-using UsersService.Repository;
 using UsersService.Protos;
 using User = UsersService.Entities.User;
 using UsersService.Cache;
@@ -15,19 +14,21 @@ using Google.Protobuf.Collections;
 using UsersService.Entities;
 using StackExchange.Redis;
 using UsersService.Tools;
+using UsersService.Repository.Auth;
+using UsersService.Repository.Users;
 
 
 namespace UsersService.Services
 {
     public class UsersServiceImplementation : Protos.UsersService.UsersServiceBase
     {
-        private readonly UsersRepository _usersRepository;
-        private readonly AuthRepository _authRepository;
+        private readonly IUsersRepository _usersRepository;
+        private readonly IAuthRepository _authRepository;
         private readonly ICacheService _cacheService;
         private readonly ISecurityManager _securityManager;
         private readonly ITokenProvider _tokenProvider;
         private readonly IConfiguration _configuration;
-        public UsersServiceImplementation(UsersRepository usersRepository, ICacheService cacheService, ISecurityManager securityManager, ITokenProvider tokenProvider, IConfiguration configuration,AuthRepository authRepository)
+        public UsersServiceImplementation(IUsersRepository usersRepository, ICacheService cacheService, ISecurityManager securityManager, ITokenProvider tokenProvider, IConfiguration configuration, IAuthRepository authRepository)
         {
             _authRepository = authRepository;
             _usersRepository = usersRepository;
