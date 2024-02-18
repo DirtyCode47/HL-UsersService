@@ -3,13 +3,14 @@ using UsersService.Entities;
 
 namespace UsersService.Repository
 {
-    public class UsersDbContext: DbContext
+    public class UserAuthDbContext: DbContext
     {
-        public UsersDbContext(DbContextOptions<UsersDbContext> options) : base(options) 
+        public UserAuthDbContext(DbContextOptions<UserAuthDbContext> options) : base(options) 
         { 
             
         }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<AuthInfo> AuthInfo { get; set; }
     }
 }

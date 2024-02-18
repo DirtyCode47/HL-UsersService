@@ -20,7 +20,7 @@ namespace UsersService
                             listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
                         });
                     });
-                    webBuilder.UseStartup<Startup>(); // ”казываетс€ Startup-класс
+                    webBuilder.UseStartup<Startup>(); 
                 });
     }
 }
