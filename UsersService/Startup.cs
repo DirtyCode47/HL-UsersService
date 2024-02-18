@@ -6,6 +6,7 @@ using UsersService.Cache;
 using Newtonsoft.Json;
 using UsersService.Protos;
 using UsersService.Entities;
+using UsersService.Tools;
 
 namespace UsersService
 {
@@ -33,8 +34,9 @@ namespace UsersService
             services.AddScoped<AuthRepository>();
             services.AddScoped<UsersServiceImplementation>();
             services.AddScoped<AuthServiceImplementation>();
-            services.AddScoped<SecurityService>();
-            services.AddScoped<CacheService>();
+            services.AddScoped<ICacheService,CacheService>();
+            services.AddScoped<ISecurityManager, SecurityManager>();
+            services.AddScoped<ITokenProvider, TokenProvider>();
 
             services.AddGrpc();
         }

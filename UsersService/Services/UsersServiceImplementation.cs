@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Google.Protobuf.Collections;
 using UsersService.Entities;
 using StackExchange.Redis;
+using UsersService.Tools;
 
 
 namespace UsersService.Services
@@ -22,16 +23,18 @@ namespace UsersService.Services
     {
         private readonly UsersRepository _usersRepository;
         private readonly AuthRepository _authRepository;
-        private readonly CacheService _cacheService;
-        private readonly SecurityService _securityService;
+        private readonly ICacheService _cacheService;
+        private readonly ISecurityManager _securityManager;
+        private readonly ITokenProvider _tokenProvider;
         private readonly IConfiguration _configuration;
-        public UsersServiceImplementation(UsersRepository usersRepository, CacheService cacheService, SecurityService securityService, IConfiguration configuration,AuthRepository authRepository)
+        public UsersServiceImplementation(UsersRepository usersRepository, ICacheService cacheService, ISecurityManager securityManager, ITokenProvider tokenProvider, IConfiguration configuration,AuthRepository authRepository)
         {
-            _authRepository = authRepository ?? throw new ArgumentNullException(nameof(authRepository));
-            _usersRepository = usersRepository ?? throw new ArgumentNullException(nameof(usersRepository));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-            _securityService = securityService ?? throw new ArgumentNullException(nameof(securityService));
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _authRepository = authRepository;
+            _usersRepository = usersRepository;
+            _cacheService = cacheService;
+            _securityManager = securityManager;
+            _tokenProvider = tokenProvider;
+            _configuration = configuration;
         }
 
         public override async Task<CreateUserResponse> CreateUser(CreateUserRequest request, ServerCallContext context)
@@ -58,8 +61,8 @@ namespace UsersService.Services
             User added_user = await _usersRepository.CreateAsync(user);
 
 
-            byte[] password_salt = _securityService.GenerateSalt(16);
-            byte[] password_hash = _securityService.CreateHash(request.User.Password, password_salt);
+            byte[] password_salt = _securityManager.GenerateSalt(16);
+            byte[] password_hash = _securityManager.CreateHash(request.User.Password, password_salt);
 
             var auth_info = new AuthInfo()
             {
@@ -136,8 +139,8 @@ namespace UsersService.Services
             //    throw new RpcException(new Status(StatusCode.AlreadyExists, "Record with this post code already exists"));
             //}
 
-            byte[] password_salt = _securityService.GenerateSalt(16);
-            byte[] password_hash = _securityService.CreateHash(request.User.Password, password_salt);
+            byte[] password_salt = _securityManager.GenerateSalt(16);
+            byte[] password_hash = _securityManager.CreateHash(request.User.Password, password_salt);
 
             existingUser.postCode = request.User.PostCode;
             existingUser.firstName = request.User.FirstName;

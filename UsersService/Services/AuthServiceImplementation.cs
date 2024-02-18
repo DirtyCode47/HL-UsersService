@@ -11,23 +11,26 @@ using Newtonsoft.Json;
 using StackExchange.Redis;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Runtime.CompilerServices;
+using UsersService.Tools;
 
 namespace UsersService.Services
 {
     public class AuthServiceImplementation:Protos.AuthService.AuthServiceBase
     {
-        private readonly AuthRepository _authRepository;
         private readonly UsersRepository _usersRepository;
-        private readonly CacheService _cacheService;
-        private readonly SecurityService _securityService;
+        private readonly AuthRepository _authRepository;
+        private readonly ICacheService _cacheService;
+        private readonly ISecurityManager _securityManager;
+        private readonly ITokenProvider _tokenProvider;
         private readonly IConfiguration _configuration;
-        public AuthServiceImplementation(UsersRepository usersRepository, CacheService cacheService, SecurityService authService, IConfiguration configuration, AuthRepository authRepository)
+        public AuthServiceImplementation(UsersRepository usersRepository, ICacheService cacheService, ISecurityManager securityManager, ITokenProvider tokenProvider, IConfiguration configuration, AuthRepository authRepository)
         {
-            _usersRepository = usersRepository ?? throw new ArgumentNullException(nameof(usersRepository));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-            _securityService = authService ?? throw new ArgumentNullException(nameof(authService));
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _authRepository = authRepository ?? throw new ArgumentNullException(nameof(authRepository));
+            _authRepository = authRepository;
+            _usersRepository = usersRepository;
+            _cacheService = cacheService;
+            _securityManager = securityManager;
+            _tokenProvider = tokenProvider;
+            _configuration = configuration;
         }
         public override async Task<LoginUserResponse> LoginUser(LoginUserRequest request, ServerCallContext context)
         {
@@ -41,7 +44,7 @@ namespace UsersService.Services
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Can't find user with such login!"));
             }
 
-            if (!_securityService.VerifyHash(request.Password, authInfo.passwordHash, authInfo.passwordSalt))
+            if (!_securityManager.VerifyHash(request.Password, authInfo.passwordHash, authInfo.passwordSalt))
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Password is not correct!"));
             }
@@ -50,11 +53,11 @@ namespace UsersService.Services
 
             authInfo.jwtId = Guid.NewGuid();
 
-            string accessToken = _securityService.CreateToken(user, authInfo);
-            string refreshToken = _securityService.GenerateRefreshToken();
+            string accessToken = _tokenProvider.GenerateAccessToken(user, authInfo);
+            string refreshToken = _tokenProvider.GenerateRefreshToken();
 
-            byte[] refreshTokenSalt = _securityService.GenerateSalt(16);
-            byte[] refreshTokenHash = _securityService.CreateHash(refreshToken, refreshTokenSalt);
+            byte[] refreshTokenSalt = _securityManager.GenerateSalt(16);
+            byte[] refreshTokenHash = _securityManager.CreateHash(refreshToken, refreshTokenSalt);
 
             authInfo.refreshTokenHash = refreshTokenHash;
             authInfo.refreshTokenSalt = refreshTokenSalt;
@@ -173,7 +176,7 @@ namespace UsersService.Services
                 throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
             }
 
-            ValidateRefreshTokenResponse response = (authInfo.refreshTokenExpiry > DateTime.UtcNow && _securityService.VerifyHash(request.RefreshToken,authInfo.refreshTokenHash,authInfo.refreshTokenSalt)) ?
+            ValidateRefreshTokenResponse response = (authInfo.refreshTokenExpiry > DateTime.UtcNow && _securityManager.VerifyHash(request.RefreshToken,authInfo.refreshTokenHash,authInfo.refreshTokenSalt)) ?
                 new ValidateRefreshTokenResponse() { Success = true } :
                 new ValidateRefreshTokenResponse() { Success = false };
 
@@ -195,11 +198,11 @@ namespace UsersService.Services
 
             authInfo.jwtId = Guid.NewGuid();
 
-            string accessToken = _securityService.CreateToken(user,authInfo);
-            string refreshToken = _securityService.GenerateRefreshToken();
+            string accessToken = _tokenProvider.GenerateAccessToken(user,authInfo);
+            string refreshToken = _tokenProvider.GenerateRefreshToken();
 
-            byte[] refreshTokenSalt = _securityService.GenerateSalt(16);
-            byte[] refreshTokenHash = _securityService.CreateHash(refreshToken, refreshTokenSalt);
+            byte[] refreshTokenSalt = _securityManager.GenerateSalt(16);
+            byte[] refreshTokenHash = _securityManager.CreateHash(refreshToken, refreshTokenSalt);
 
             authInfo.refreshTokenHash = refreshTokenHash;
             authInfo.refreshTokenSalt = refreshTokenSalt;

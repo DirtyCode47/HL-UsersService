@@ -5,7 +5,7 @@ using StackExchange.Redis;
 
 namespace UsersService.Cache
 {
-    public class CacheService
+    public class CacheService:ICacheService
     {
         private readonly IConnectionMultiplexer _redisConnection;
 
@@ -65,21 +65,6 @@ namespace UsersService.Cache
         {
             var server = _redisConnection.GetServer(_redisConnection.GetEndPoints()[0]);
             server.FlushAllDatabases();
-        }
-
-        public void InitializeCache(List<User> users)
-        {
-            var database = _redisConnection.GetDatabase();
-
-            // Очищаем все данные в кэше перед инициализацией
-            ClearAll();
-
-            foreach (var post in users)
-            {
-                var cacheKey = $"post:{post.id}";
-                var serializedPost = JsonConvert.SerializeObject(post);
-                database.StringSet(cacheKey, serializedPost);
-            }
         }
     }
 }
