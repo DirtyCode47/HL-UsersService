@@ -24,9 +24,9 @@ namespace UsersService.Entities
         [Required]
         public byte[] passwordSalt { get; set; }
 
-        public Guid jwtId { get; set; }
-        public byte[] refreshTokenHash { get; set; }
-        public byte[] refreshTokenSalt { get; set; }
+        public Guid? jwtId { get; set; }
+        public byte[]? refreshTokenHash { get; set; }
+        public byte[]? refreshTokenSalt { get; set; }
 
         public DateTime? refreshTokenExpiry { get; set; }
 

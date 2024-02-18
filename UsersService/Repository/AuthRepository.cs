@@ -5,11 +5,11 @@ namespace UsersService.Repository
 {
     public class AuthRepository:Repository<AuthInfo>
     {
-        public UserAuthDbContext dbContext { get; set; }
+        public UserAuthDbContext _dbContext { get; set; }
 
         public AuthRepository(UserAuthDbContext dbContext):base(dbContext)
         {
-            
+            this._dbContext = dbContext;
         }
         //public async Task<AuthInfo?> GetAuthInfoByLogin(string login)
         //{
@@ -19,7 +19,7 @@ namespace UsersService.Repository
 
         public AuthInfo? GetAuthInfoByLogin(string login)
         {
-            return dbContext?.AuthInfo?.FirstOrDefault(u => u.login == login);
+            return _dbContext?.AuthInfo?.FirstOrDefault(u => u.login == login);
         }
     }
 }

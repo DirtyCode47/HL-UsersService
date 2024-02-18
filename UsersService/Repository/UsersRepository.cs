@@ -7,11 +7,11 @@ namespace UsersService.Repository
 {
     public class UsersRepository : Repository<User>
     {
-        private UserAuthDbContext dbContext { get; set; }
+        private UserAuthDbContext _dbContext { get; set; }
 
         public UsersRepository(UserAuthDbContext _dbContext):base(_dbContext) 
         { 
-            
+            this._dbContext = _dbContext;
         }
 
         //public User CreateUser(User user)
@@ -59,7 +59,12 @@ namespace UsersService.Repository
 
         public IEnumerable<User> GetAllUsers()
         {
-            return dbContext.Users;
+            return _dbContext.Users;
+        }
+
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            return await _dbContext.Users.ToListAsync();
         }
 
         public async Task<User> FindByPostCode(string post_code)
@@ -72,7 +77,7 @@ namespace UsersService.Repository
 
             //// Обработка случая, когда _dbContext или _dbContext.Users равны null
             //return null;
-            return await dbContext?.Users?.FirstOrDefaultAsync(u => u.postCode == post_code);
+            return await _dbContext?.Users?.FirstOrDefaultAsync(u => u.postCode == post_code);
         }
 
         //public void Complete()

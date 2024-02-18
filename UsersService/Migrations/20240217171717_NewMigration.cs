@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UsersService.Migrations
 {
     /// <inheritdoc />
-    public partial class NewVariantOfAuthTable : Migration
+    public partial class NewMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,9 +36,9 @@ namespace UsersService.Migrations
                     login = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
                     passwordHash = table.Column<byte[]>(type: "bytea", nullable: false),
                     passwordSalt = table.Column<byte[]>(type: "bytea", nullable: false),
-                    jwtId = table.Column<Guid>(type: "uuid", nullable: false),
-                    refreshTokenHash = table.Column<byte[]>(type: "bytea", nullable: false),
-                    refreshTokenSalt = table.Column<byte[]>(type: "bytea", nullable: false),
+                    jwtId = table.Column<Guid>(type: "uuid", nullable: true),
+                    refreshTokenHash = table.Column<byte[]>(type: "bytea", nullable: true),
+                    refreshTokenSalt = table.Column<byte[]>(type: "bytea", nullable: true),
                     refreshTokenExpiry = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>

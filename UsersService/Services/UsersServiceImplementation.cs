@@ -67,8 +67,7 @@ namespace UsersService.Services
                 role = request.User.Role,
                 login = request.User.Login,
                 passwordHash = password_hash,
-                passwordSalt = password_salt,
-                jwtId = Guid.NewGuid()
+                passwordSalt = password_salt
             };
 
             AuthInfo added_auth_info = await _authRepository.CreateAsync(auth_info);
@@ -76,9 +75,6 @@ namespace UsersService.Services
             await _usersRepository.CompleteAsync();
             await _authRepository.CompleteAsync();
            
-            // Обновляем кэш
-            _cacheService.AddOrUpdateCache($"user:{added_user.id}", added_user);
-            _cacheService.AddOrUpdateCache($"auth:{added_auth_info.id}", added_auth_info);
 
             return new CreateUserResponse
             {
@@ -104,12 +100,8 @@ namespace UsersService.Services
             _cacheService.AddOrUpdateCache($"blacklist:{authInfo.jwtId}", authInfo.jwtId); //Добавляем в черный лист
 
             await _usersRepository.Delete(user_id);
-            
-
             await _usersRepository.CompleteAsync();
             // Удаляем из кэша
-            _cacheService.ClearCache($"user:{user.id}");
-            _cacheService.ClearCache($"auth:{user.id}");
 
             return new DeleteUserResponse
             {
@@ -172,9 +164,6 @@ namespace UsersService.Services
             await _usersRepository.CompleteAsync();
             await _authRepository.CompleteAsync();
 
-            // Обновить кэш
-            _cacheService.AddOrUpdateCache($"user:{entry.id}", entry);
-
             return new UpdateUserResponse
             {
                 User = new Protos.UserDTO
@@ -196,21 +185,12 @@ namespace UsersService.Services
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
             }
 
-            User user = _cacheService.GetFromCache<User>($"user:{guid}");
+            var user = await _usersRepository.GetAsync(guid);
+
             if (user == null)
-            {
-                // Если записи нет в кэше, пытаемся получить из базы данных
-                user = await _usersRepository.GetAsync(guid);
-
-                if (user == null)
-                    throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
-
-                // добавляем в кэш
-                _cacheService.AddOrUpdateCache($"user:{user.id}", user);
-            }
+               throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
 
             
-
             return new GetUserResponse
             {
                 User = new Protos.UserDTO
@@ -225,19 +205,13 @@ namespace UsersService.Services
             };
         }
 
-        public override Task<GetAllUsersResponse> GetAllUsers(GetAllUsersRequest request, ServerCallContext context)
+        public override async Task<GetAllUsersResponse> GetAllUsers(GetAllUsersRequest request, ServerCallContext context)
         {
-            var Users = _cacheService.GetAllFromCache<User>("user:*");
-
-            if (Users == null)
-            {
-                Users = _usersRepository.GetAll().ToList(); //Надо не забыть добавить в кэш
-            }
-
-
+            var users = await _usersRepository.GetAllUsersAsync(); //Надо не забыть добавить в кэш
+            
             var response = new GetAllUsersResponse();
 
-            foreach (var user in Users)
+            foreach (var user in users)
             {
                 response.Users.Add(new UserDTO
                 {
@@ -250,7 +224,7 @@ namespace UsersService.Services
                 });
             }
 
-            return Task.FromResult(response);
+            return response;
         }
 
         //public override Task<FindUsersWithFiltersResponse> FindUsersWithFilters(FindUsersWithFiltersRequest request, ServerCallContext context)

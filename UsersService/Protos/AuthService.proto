@@ -5,7 +5,7 @@ service AuthService {
 	rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
 	rpc ValidateAccessToken(ValidateAccessTokenRequest) returns (ValidateAccessTokenResponse);
 	rpc ValidateAccessTokenLifetime(ValidateAccessTokenLifetimeRequest) returns (ValidateAccessTokenLifetimeResponse);
-	rpc ValidateRefreshTokenLifetime(ValidateRefreshTokenLifetimeRequest) returns (ValidateRefreshTokenLifetimeResponse);
+	rpc ValidateRefreshToken(ValidateRefreshTokenRequest) returns (ValidateRefreshTokenResponse);
 	rpc RegenerateTokens(RegenerateTokensRequest) returns (RegenerateTokensResponse);
 	rpc LogoutUser(LogoutUserRequest) returns (LogoutUserResponse);
 }
@@ -38,10 +38,11 @@ message ValidateAccessTokenLifetimeResponse{
 
 
 
-message ValidateRefreshTokenLifetimeRequest{
-	string refresh_token = 1;
+message ValidateRefreshTokenRequest{
+	string user_id = 1;
+	string refresh_token = 2;
 }
-message ValidateRefreshTokenLifetimeResponse{
+message ValidateRefreshTokenResponse{
 	bool success = 1;
 }
 
@@ -59,7 +60,8 @@ message RegenerateTokensResponse{
 
 
 message LogoutUserRequest{
-	string access_token = 1;
+	string user_id = 1;
+	string access_token = 2;
 }
 message LogoutUserResponse{
 	string access_token = 1;

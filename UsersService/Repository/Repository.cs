@@ -5,40 +5,40 @@ namespace UsersService.Repository
 {
     public class Repository<TEntity>:IRepository<TEntity> where TEntity : class
     {
-        private UserAuthDbContext dbContext { get; set; }
+        private UserAuthDbContext _dbContext { get; set; }
         public Repository(UserAuthDbContext dbContext)
         {
-            this.dbContext = dbContext;
+            this._dbContext = dbContext;
         }
         public TEntity Create(TEntity entity)
         {
-            return dbContext.Set<TEntity>().Add(entity).Entity;
+            return _dbContext.Set<TEntity>().Add(entity).Entity;
         }
 
         public async Task<TEntity> CreateAsync(TEntity entity)
         {
-            var added_user = await dbContext.Set<TEntity>().AddAsync(entity);
+            var added_user = await _dbContext.Set<TEntity>().AddAsync(entity);
             return added_user.Entity;
         }
 
         public async Task<TEntity> Delete(Guid id)
         {
-            return dbContext.Set<TEntity>().Remove(await GetAsync(id)).Entity;
+            return _dbContext.Set<TEntity>().Remove(await GetAsync(id)).Entity;
         }
 
         public TEntity Update(TEntity entity)
         {
-            return dbContext.Set<TEntity>().Update(entity).Entity;
+            return _dbContext.Set<TEntity>().Update(entity).Entity;
         }
 
         public TEntity? Get(Guid id)
         {
-            return dbContext.Set<TEntity>().Find(id) ?? null;
+            return _dbContext.Set<TEntity>().Find(id) ?? null;
         }
 
         public async Task<TEntity?> GetAsync(Guid id)
         {
-            return await dbContext.Set<TEntity>().FindAsync(id);
+            return await _dbContext.Set<TEntity>().FindAsync(id);
         }
 
         //public User GetUserByLogin(string login)
@@ -55,7 +55,7 @@ namespace UsersService.Repository
 
         public IEnumerable<TEntity> GetAll()
         {
-            return dbContext.Set<TEntity>();
+            return _dbContext.Set<TEntity>();
         }
 
         //public async Task<User?> FindByPostCode(string post_code)
@@ -65,12 +65,12 @@ namespace UsersService.Repository
 
         public void Complete()
         {
-            dbContext.SaveChanges();
+            _dbContext.SaveChanges();
         }
 
         public async Task<int> CompleteAsync()
         {
-            return await dbContext.SaveChangesAsync();
+            return await _dbContext.SaveChangesAsync();
         }
 
         //private bool isNeededUser(User user, string[] nameParts, string role, string post_code)

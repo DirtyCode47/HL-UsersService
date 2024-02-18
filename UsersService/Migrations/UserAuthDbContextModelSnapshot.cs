@@ -27,7 +27,7 @@ namespace UsersService.Migrations
                     b.Property<Guid>("id")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("jwtId")
+                    b.Property<Guid?>("jwtId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("login")
@@ -47,11 +47,9 @@ namespace UsersService.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<byte[]>("refreshTokenHash")
-                        .IsRequired()
                         .HasColumnType("bytea");
 
                     b.Property<byte[]>("refreshTokenSalt")
-                        .IsRequired()
                         .HasColumnType("bytea");
 
                     b.Property<string>("role")

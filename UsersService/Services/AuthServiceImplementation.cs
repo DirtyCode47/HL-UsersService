@@ -46,8 +46,9 @@ namespace UsersService.Services
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Password is not correct!"));
             }
 
-            User? user = _usersRepository.Get(authInfo.id);
-            //User? user = await _usersRepository.GetAsync(authInfo.id);
+            User? user = await _usersRepository.GetAsync(authInfo.id);
+
+            authInfo.jwtId = Guid.NewGuid();
 
             string accessToken = _securityService.CreateToken(user, authInfo);
             string refreshToken = _securityService.GenerateRefreshToken();
@@ -93,12 +94,12 @@ namespace UsersService.Services
                 SecurityToken validatedToken;
                 var principal = tokenHandler.ValidateToken(request.AccessToken, tokenValidationParameters, out validatedToken);
 
-                
 
                 var handler = new JwtSecurityTokenHandler();  //Проверка на то, есть ли токен в блэклисте
                 var jsonToken = handler.ReadToken(request.AccessToken) as JwtSecurityToken;
 
-                var jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "JwtId");
+                var jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "jwtId").Value;
+
 
                 if (_cacheService.GetFromCache<string>($"blacklist:{jwt_id}") != null)
                 {
@@ -158,15 +159,25 @@ namespace UsersService.Services
         }
 
 
-        public override Task<ValidateRefreshTokenLifetimeResponse> ValidateRefreshTokenLifetime(ValidateRefreshTokenLifetimeRequest request, ServerCallContext context)
+        public override async Task<ValidateRefreshTokenResponse> ValidateRefreshToken(ValidateRefreshTokenRequest request, ServerCallContext context)
         {
-            RefreshToken refreshToken = JsonConvert.DeserializeObject<RefreshToken>(request.RefreshToken);
+            if (!Guid.TryParse(request.UserId, out Guid userId))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
+            }
 
-            ValidateRefreshTokenLifetimeResponse response = (refreshToken.Expires < DateTime.UtcNow) ?
-                new ValidateRefreshTokenLifetimeResponse() { Success = false } :
-                new ValidateRefreshTokenLifetimeResponse() { Success = true };
+            var authInfo = await _authRepository.GetAsync(userId);
 
-            return Task.FromResult(response);
+            if(authInfo == null)
+            {
+                throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
+            }
+
+            ValidateRefreshTokenResponse response = (authInfo.refreshTokenExpiry < DateTime.UtcNow && !_securityService.VerifyHash(request.RefreshToken,authInfo.refreshTokenHash,authInfo.refreshTokenSalt)) ?
+                new ValidateRefreshTokenResponse() { Success = false } :
+                new ValidateRefreshTokenResponse() { Success = true };
+
+            return response;
         }
 
         public override async Task<RegenerateTokensResponse> RegenerateTokens(RegenerateTokensRequest request, ServerCallContext context)
@@ -183,17 +194,54 @@ namespace UsersService.Services
             AuthInfo? authInfo = await _authRepository.GetAsync(Guid.Parse(request.UserId));
 
             authInfo.jwtId = Guid.NewGuid();
-            string access_token = _securityService.CreateToken(user,authInfo);
-            string refresh_token = _securityService.GenerateRefreshToken();
 
-            return new RegenerateTokensResponse() { AccessToken = access_token, RefreshToken = refresh_token };
+            string accessToken = _securityService.CreateToken(user,authInfo);
+            string refreshToken = _securityService.GenerateRefreshToken();
 
-            //return null;
+            byte[] refreshTokenSalt = _securityService.GenerateSalt(16);
+            byte[] refreshTokenHash = _securityService.CreateHash(refreshToken, refreshTokenSalt);
+
+            authInfo.refreshTokenHash = refreshTokenHash;
+            authInfo.refreshTokenSalt = refreshTokenSalt;
+            authInfo.refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+
+            _authRepository.Update(authInfo);
+            await _authRepository.CompleteAsync();
+
+            return new RegenerateTokensResponse() { AccessToken = accessToken, RefreshToken = refreshToken };
         }
 
-        //public override Task<LogoutUserResponse> LogoutUser(LogoutUserRequest request, ServerCallContext context)
-        //{
+        public override async Task<LogoutUserResponse> LogoutUser(LogoutUserRequest request, ServerCallContext context)
+        {
+            if (!Guid.TryParse(request.UserId, out Guid userId))
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Not correct format of id"));
+            }
 
-        //}
+            var authInfo = await _authRepository.GetAsync(userId);
+
+            if (authInfo == null)
+            {
+                throw new RpcException(new Status(StatusCode.NotFound, "Can't find a record in the database with this id"));
+            }
+
+            string jwtToken = request.AccessToken;
+
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(jwtToken) as JwtSecurityToken;
+
+            var old_jwt_id = jsonToken.Claims.FirstOrDefault(c => c.Type == "jwtId").Value;
+            _cacheService.AddOrUpdateCache($"blacklist:{old_jwt_id}", old_jwt_id); //Добавляем в черный лист
+
+            authInfo.refreshTokenHash = null;
+            authInfo.refreshTokenSalt = null;
+            authInfo.refreshTokenExpiry = null;
+            authInfo.jwtId = null;
+
+            _authRepository.Update(authInfo);
+            await _authRepository.CompleteAsync();
+
+            return new LogoutUserResponse { AccessToken = jwtToken };
+        }
     }
 }
